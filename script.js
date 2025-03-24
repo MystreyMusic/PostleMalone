@@ -8,24 +8,36 @@ let highScore = localStorage.getItem("high_score") || 0;
 const loginBtn = document.getElementById("login-btn");
 const playBtn = document.getElementById("play-btn");
 const songInput = document.getElementById("song-guess");
-const datalist = document.getElementById("song-list"); // Datalist element
+const datalist = document.getElementById("song-list");
 const scoreDisplay = document.getElementById("score");
 const highScoreDisplay = document.getElementById("high-score");
 const lightBar = document.getElementById("light-bar");
 const correctAnswerDisplay = document.getElementById("correct-answer");
+const answerText = document.getElementById("answer-text");
 
 let player;
 let deviceId = null;
 let currentSongTitle = "";
-let songList = [];
+
+// 🎵 Song Titles List
+const songList = [
+    "92 Explorer", "A Thousand Bad Times", "Ain’t How It Ends", "Allergic",
+    "Back To Texas", "Ball For Me (feat. Nicki Minaj)", "Better Now", "Big Lie",
+    "Blame It On Me", "Broken Whiskey Glass", "Buyer Beware", "California Sober (Feat. Chris Stapleton)",
+    "Candy Paint", "Chemical", "Circles", "Cold", "Congratulations (feat. Quavo)",
+    "Cooped Up (with Roddy Ricch)", "Dead At The Honky Tonk", "Deja Vu", "Devil I've Been (Feat. ERNEST)",
+    "Die For Me (feat. Future & Halsey)", "Don't Understand", "Enemies (feat. DaBaby)", 
+    "Enough Is Enough", "Euthanasia", "Fallin’ In Love", "Feeling Whitney", "Go Flex", 
+    "Goodbyes (feat. Young Thug)", "Hollywood's Bleeding", "I Fall Apart", "I Had Some Help (Feat. Morgan Wallen)",
+    "I Like You (A Happier Song) (with Doja Cat)", "Insane", "Jonestown (Interlude)", 
+    "Love/Hate Letter To Alcohol (with Fleet Foxes)", "Mourning", "Overdrive", "Psycho (feat. Ty Dolla $ign)", 
+    "Sunflower - Spider-Man: Into the Spider-Verse", "Take What You Want (feat. Ozzy Osbourne & Travis Scott)",
+    "White Iverson", "Wow.", "rockstar (feat. 21 Savage)"
+];
 
 // 🎉 Confetti Effect
 function triggerConfetti() {
-    confetti({
-        particleCount: 200,
-        spread: 70,
-        origin: { y: 0.6 }
-    });
+    confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
 }
 
 // ✅ Redirect user to Spotify login
@@ -54,7 +66,6 @@ function getAccessToken() {
 
         window.history.replaceState({}, document.title, redirectUri);
         loginBtn.textContent = "Login Successful";
-        fetchPlaylistSongs();
     }
 }
 
@@ -66,41 +77,17 @@ function isTokenExpired() {
 // ✅ Prevent Login Loop
 function ensureToken() {
     if (isTokenExpired()) {
-        console.warn("Spotify Token Expired. Redirecting to login...");
         localStorage.removeItem("spotify_token");
         localStorage.removeItem("spotify_token_expiration");
-        loginBtn.textContent = "Login to Spotify";  // Reset text
+        loginBtn.textContent = "Login to Spotify";  
     }
 }
 
 // ✅ Initialize Spotify Web Playback SDK
 window.onSpotifyWebPlaybackSDKReady = () => {
-    console.log("✅ Spotify Web Playback SDK is ready.");
     ensureToken();
     initializePlayer();
 };
-
-// ✅ Fetch playlist songs for autocomplete (Only after login)
-async function fetchPlaylistSongs() {
-    if (!token) return;
-    try {
-        const response = await fetch("songs_list.txt");
-        const text = await response.text();
-        songList = text.split("\n").map(song => song.trim()).filter(song => song.length > 0);
-
-        console.log("✅ Songs list loaded:", songList);
-
-        // ✅ Populate datalist with songs
-        datalist.innerHTML = "";
-        songList.forEach(song => {
-            let option = document.createElement("option");
-            option.value = song;
-            datalist.appendChild(option);
-        });
-    } catch (error) {
-        console.error("❌ Error loading songs list:", error);
-    }
-}
 
 // ✅ Initialize Spotify Player
 function initializePlayer() {
@@ -124,55 +111,51 @@ function initializePlayer() {
 async function playRandomSong() {
     if (!deviceId) return;
 
-    try {
-        const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
+    const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
+        headers: { "Authorization": `Bearer ${token}` }
+    });
 
-        if (!response.ok) throw new Error();
+    const data = await response.json();
+    const randomTrack = data.items[Math.floor(Math.random() * data.items.length)];
+    const randomStartMs = Math.floor(Math.random() * 30000);
+    currentSongTitle = randomTrack.track.name;
 
-        const data = await response.json();
-        const tracks = data.items;
+    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
+    });
 
-        const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-        const randomStartMs = Math.floor(Math.random() * 30000);
-        currentSongTitle = randomTrack.track.name;
-
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-            method: "PUT",
-            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
-        });
-
-        lightBar.style.transition = "width 15s linear";
-        lightBar.style.width = "100%";
-
-        setTimeout(() => stopSong(), 15000);
-    } catch (error) {
-        console.error("❌ Error fetching or playing track:", error);
-    }
+    setTimeout(() => stopSong(currentSongTitle), 15000); // Stop song after 15 seconds
 }
 
-// ✅ Stop Song
-async function stopSong() {
-    try {
-        await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
-            method: "PUT",
-            headers: { "Authorization": `Bearer ${token}` }
-        });
+// ✅ Stop Song and Show Correct Answer
+async function stopSong(correctTitle) {
+    await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
 
-        correctAnswerDisplay.textContent = `Correct answer: ${currentSongTitle}`;
-    } catch (error) {
-        console.error("❌ Error stopping song:", error);
-    }
+    answerText.textContent = correctTitle;
+    correctAnswerDisplay.style.visibility = "visible";
+
+    // Clear the text box immediately after the round ends
+    songInput.value = "";
+
+    // Reset the game or proceed to the next round
+    setTimeout(() => {
+        correctAnswerDisplay.style.visibility = "hidden"; // Hide the correct answer for next round
+        playRandomSong();
+    }, 3000); // Start a new song after a 3-second delay
 }
 
 // ✅ Check answer
 function checkAnswer() {
     let guessedSong = songInput.value.trim().toLowerCase();
     if (guessedSong === currentSongTitle.toLowerCase()) {
-        stopSong();
+        stopSong(currentSongTitle);
         triggerConfetti();
+
         let currentScore = parseInt(scoreDisplay.textContent) + 1;
         scoreDisplay.textContent = currentScore;
 
@@ -180,10 +163,14 @@ function checkAnswer() {
             highScore = currentScore;
             localStorage.setItem("high_score", highScore);
             highScoreDisplay.textContent = highScore;
+            new Audio("congratulations.mp3").play();
         }
 
         songInput.value = "";
-        setTimeout(() => playRandomSong(), 3000); // Next song after 3 seconds
+        setTimeout(() => {
+            correctAnswerDisplay.style.visibility = "hidden"; // Hide the correct answer for next round
+            playRandomSong();
+        }, 3000); // Start new song after 3-second delay
     } else {
         songInput.classList.add("shake");
         setTimeout(() => songInput.classList.remove("shake"), 500);
@@ -191,9 +178,17 @@ function checkAnswer() {
     }
 }
 
+// ✅ Autocomplete for song input
+songInput.addEventListener("input", () => {
+    let inputText = songInput.value.toLowerCase();
+    datalist.innerHTML = songList.filter(song => song.toLowerCase().startsWith(inputText))
+        .map(song => `<option value="${song}"></option>`).join("");
+});
+
+getAccessToken();
+
+// ✅ Handle Enter key and submit button
 document.getElementById("submit-btn").addEventListener("click", checkAnswer);
 songInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkAnswer();
 });
-
-getAccessToken();
