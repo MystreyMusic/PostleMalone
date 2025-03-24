@@ -42,6 +42,7 @@ function triggerConfetti() {
 
 // ✅ Redirect user to Spotify login
 loginBtn.addEventListener("click", () => {
+    console.log("Login button clicked. Redirecting to Spotify...");
     const authUrl = `https://accounts.spotify.com/authorize` +
         `?client_id=${clientId}` +
         `&response_type=token` +
@@ -53,6 +54,7 @@ loginBtn.addEventListener("click", () => {
 
 // ✅ Extract and store access token
 function getAccessToken() {
+    console.log("Checking for access token...");
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get("access_token");
     const expiresIn = hashParams.get("expires_in");
@@ -66,6 +68,7 @@ function getAccessToken() {
 
         window.history.replaceState({}, document.title, redirectUri);
         loginBtn.textContent = "Login Successful";
+        console.log("Access token obtained.");
     }
 }
 
@@ -105,6 +108,7 @@ function initializePlayer() {
         deviceId = device_id;
         console.log(`Spotify Player connected with device ID: ${deviceId}`);
         playBtn.disabled = false;
+        transferPlayback(); // ✅ Transfer playback to the web player
     });
 
     player.connect().then(success => {
@@ -116,88 +120,58 @@ function initializePlayer() {
     });
 }
 
-// ✅ Play a random song for 15 seconds
-async function playRandomSong() {
-    if (!deviceId) return;
-
-    const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    const randomTrack = data.items[Math.floor(Math.random() * data.items.length)];
-    const randomStartMs = Math.floor(Math.random() * 30000);
-    currentSongTitle = randomTrack.track.name;
-
-    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+// ✅ Transfer Playback to Web Player
+function transferPlayback() {
+    fetch("https://api.spotify.com/v1/me/player", {
         method: "PUT",
-        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
-    });
-
-    // Set a timer to stop the song after 15 seconds
-    setTimeout(() => stopSong(currentSongTitle), 15000);
-}
-
-// ✅ Stop Song and Show Correct Answer
-async function stopSong(correctTitle) {
-    await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    answerText.textContent = correctTitle;
-    correctAnswerDisplay.style.visibility = "visible";
-
-    // Clear the text box immediately after the round ends
-    songInput.value = "";
-
-    // Reset the game or proceed to the next round
-    setTimeout(() => {
-        correctAnswerDisplay.style.visibility = "hidden"; // Hide the correct answer for next round
-        playRandomSong();
-    }, 3000); // Start a new song after a 3-second delay
-}
-
-// ✅ Check answer
-function checkAnswer() {
-    let guessedSong = songInput.value.trim().toLowerCase();
-    if (guessedSong === currentSongTitle.toLowerCase()) {
-        triggerConfetti();
-
-        let currentScore = parseInt(scoreDisplay.textContent) + 1;
-        scoreDisplay.textContent = currentScore;
-
-        if (currentScore > highScore) {
-            highScore = currentScore;
-            localStorage.setItem("high_score", highScore);
-            highScoreDisplay.textContent = highScore;
-            new Audio("congratulations.mp3").play();
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ device_ids: [deviceId], play: false })
+    })
+    .then(response => {
+        if (response.status === 204) {
+            console.log("Playback transferred to web player.");
+        } else {
+            console.error("Failed to transfer playback.", response);
         }
-
-        songInput.value = "";
-        setTimeout(() => {
-            correctAnswerDisplay.style.visibility = "hidden"; // Hide the correct answer for next round
-            playRandomSong();
-        }, 3000); // Start new song after 3-second delay
-    } else {
-        songInput.classList.add("shake");
-        setTimeout(() => songInput.classList.remove("shake"), 500);
-        songInput.value = "";
-    }
+    })
+    .catch(error => console.error("Error transferring playback:", error));
 }
 
-// ✅ Autocomplete for song input
-songInput.addEventListener("input", () => {
-    let inputText = songInput.value.toLowerCase();
-    datalist.innerHTML = songList.filter(song => song.toLowerCase().startsWith(inputText))
-        .map(song => `<option value="${song}"></option>`).join("");
+// ✅ Play a Random Song
+function playRandomSong() {
+    if (!deviceId) {
+        console.error("Device ID not set. Cannot play song.");
+        return;
+    }
+
+    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            uris: ["spotify:track:6b8Be6ljOzmkOmFslEb23P"], // Placeholder track (Sunflower)
+            position_ms: Math.floor(Math.random() * 15000) // Random start time
+        })
+    })
+    .then(response => {
+        if (response.status === 204) {
+            console.log("Song is playing!");
+        } else {
+            console.error("Failed to play song:", response);
+        }
+    })
+    .catch(error => console.error("Error playing song:", error));
+}
+
+// ✅ Play button event
+playBtn.addEventListener("click", () => {
+    console.log("Play button clicked. Attempting to play a song...");
+    playRandomSong();
 });
 
 getAccessToken();
-
-// ✅ Handle Enter key and submit button
-document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-songInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") checkAnswer();
-});
