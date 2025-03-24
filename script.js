@@ -40,7 +40,6 @@ function getAccessToken() {
         localStorage.setItem("spotify_token_expiration", tokenExpiration);
 
         window.history.replaceState({}, document.title, redirectUri); // ✅ Clean URL
-        initializePlayer();
     }
 }
 
@@ -51,6 +50,8 @@ function isTokenExpired() {
 
 // ✅ Initialize Spotify Web Playback SDK
 window.onSpotifyWebPlaybackSDKReady = () => {
+    console.log("Spotify Web Playback SDK is ready.");
+    
     if (!isTokenExpired()) {
         initializePlayer();
     } else {
@@ -61,6 +62,11 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 };
 
 function initializePlayer() {
+    if (typeof Spotify === "undefined") {
+        console.error("Spotify SDK not loaded.");
+        return;
+    }
+
     player = new Spotify.Player({
         name: "Postle Malone Game",
         getOAuthToken: cb => { cb(token); },
