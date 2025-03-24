@@ -175,9 +175,17 @@ async function stopSong() {
     }
 }
 
-// ✅ Check answer
 function checkAnswer() {
     let guessedSong = songInput.value.trim().toLowerCase();
+    
+    // Prevent blank answers from being accepted
+    if (guessedSong === "") {
+        songInput.classList.add("shake");
+        setTimeout(() => songInput.classList.remove("shake"), 500);
+        songInput.value = "";
+        return; // Exit function early
+    }
+
     if (guessedSong === currentSongTitle.toLowerCase()) {
         stopSong();
         triggerConfetti();

@@ -55,8 +55,8 @@ h1 {
 #light-bar {
     position: absolute;
     top: 0;
-    right: 0;  /* Changed from left: 0; to right: 0; */
-    width: 100%;
+    right: 0; /* Keep it anchored to the right */
+    width: 0%; /* Start empty */
     height: 5px;
     background: linear-gradient(to left, white, red);
     transition: width 15s linear;
