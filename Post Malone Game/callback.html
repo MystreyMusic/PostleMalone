@@ -5,18 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Auth</title>
     <script>
-        // Extract the access token from the URL
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
+        window.onload = function() {
+            // Extract the access token from the URL
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get("access_token");
 
-        if (accessToken) {
-            // Store token in localStorage
-            localStorage.setItem("spotify_access_token", accessToken);
-            window.location.href = "index.html"; // Redirect back to game
-        } else {
-            document.body.innerHTML = "<h2>Failed to get Spotify token</h2>";
-        }
+            if (accessToken) {
+                // Store token in localStorage
+                localStorage.setItem("spotify_token", accessToken);
+                
+                // Remove token fragment from URL (prevents leaking token)
+                window.history.replaceState({}, document.title, "index.html");
+                
+                // Redirect back to game
+                window.location.href = "index.html";
+            } else {
+                document.body.innerHTML = "<h2>Failed to get Spotify token</h2>";
+            }
+        };
     </script>
 </head>
 <body>
