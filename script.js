@@ -140,8 +140,27 @@ function transferPlayback() {
     .catch(error => console.error("Error transferring playback:", error));
 }
 
-// ✅ Play a Random Song
-function playRandomSong() {
+// ✅ Fetch songs from the playlist and play a random one
+function fetchPlaylistTracks() {
+    fetch("https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks", {
+        headers: { "Authorization": `Bearer ${token}` }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.items || data.items.length === 0) {
+            console.error("No songs found in the playlist.");
+            return;
+        }
+        
+        let trackUris = data.items.map(item => item.track.uri);
+        let randomTrackUri = trackUris[Math.floor(Math.random() * trackUris.length)];
+        playTrack(randomTrackUri);
+    })
+    .catch(error => console.error("Error fetching playlist tracks:", error));
+}
+
+// ✅ Play a track by URI
+function playTrack(trackUri) {
     if (!deviceId) {
         console.error("Device ID not set. Cannot play song.");
         return;
@@ -153,25 +172,16 @@ function playRandomSong() {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-            uris: ["spotify:track:6b8Be6ljOzmkOmFslEb23P"], // Placeholder track (Sunflower)
-            position_ms: Math.floor(Math.random() * 15000) // Random start time
-        })
+        body: JSON.stringify({ uris: [trackUri], position_ms: Math.floor(Math.random() * 15000) })
     })
-    .then(response => {
-        if (response.status === 204) {
-            console.log("Song is playing!");
-        } else {
-            console.error("Failed to play song:", response);
-        }
-    })
+    .then(response => response.status === 204 ? console.log("Song is playing!") : console.error("Failed to play song:", response))
     .catch(error => console.error("Error playing song:", error));
 }
 
 // ✅ Play button event
 playBtn.addEventListener("click", () => {
-    console.log("Play button clicked. Attempting to play a song...");
-    playRandomSong();
+    console.log("Play button clicked. Fetching a song from the playlist...");
+    fetchPlaylistTracks();
 });
 
 getAccessToken();
