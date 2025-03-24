@@ -10,16 +10,18 @@
             const hash = window.location.hash.substring(1);
             const params = new URLSearchParams(hash);
             const accessToken = params.get("access_token");
+            const expiresIn = params.get("expires_in"); // Get expiration time
 
             if (accessToken) {
-                // Store token in localStorage
+                // Store token and expiration in localStorage
                 localStorage.setItem("spotify_token", accessToken);
-                
+                localStorage.setItem("spotify_token_expiration", Date.now() + parseInt(expiresIn) * 1000);
+
                 // Remove token fragment from URL (prevents leaking token)
-                window.history.replaceState({}, document.title, "index.html");
-                
+                window.history.replaceState({}, document.title, "https://mystreymusic.github.io/PostleMalone/");
+
                 // Redirect back to game
-                window.location.href = "index.html";
+                window.location.href = "https://mystreymusic.github.io/PostleMalone/";
             } else {
                 document.body.innerHTML = "<h2>Failed to get Spotify token</h2>";
             }

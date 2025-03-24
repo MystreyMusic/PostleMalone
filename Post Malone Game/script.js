@@ -1,11 +1,9 @@
 const clientId = "7e4affc97a3c47b2ade0c57322b0a407";
-
-// Dynamically set redirect URI based on environment (GitHub Pages or Local)
-const redirectUri = window.location.hostname.includes("github.io")
-    ? "https://mystreymusic.github.io/PostleMalone/"
-    : "http://127.0.0.1:5500/";
+const redirectUri = "https://mystreymusic.github.io/PostleMalone/"; // ✅ Must match Developer Dashboard
 
 let token = localStorage.getItem("spotify_token");
+let tokenExpiration = localStorage.getItem("spotify_token_expiration");
+
 let player;
 let score = 0;
 
@@ -17,32 +15,48 @@ const playBtn = document.getElementById("play-btn");
 
 const playlistId = "7LlnI4VRxopojzcvDLvGko"; // Your Post Malone playlist
 
-// 🔥 Redirects user to Spotify login
+// ✅ Redirect user to Spotify login
 loginBtn.addEventListener("click", () => {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming user-read-private user-read-email`;
+    const authUrl = `https://accounts.spotify.com/authorize` +
+        `?client_id=${clientId}` +
+        `&response_type=token` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=streaming%20user-read-private%20user-read-email`;
+
     window.location.href = authUrl;
 });
 
-// 🔥 Retrieves Access Token from URL and stores it
+// ✅ Extract and store access token
 function getAccessToken() {
-    const hash = window.location.hash.substring(1).split("&").reduce((acc, item) => {
-        let parts = item.split("=");
-        acc[parts[0]] = decodeURIComponent(parts[1]);
-        return acc;
-    }, {});
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    const expiresIn = hashParams.get("expires_in");
 
-    if (hash.access_token) {
-        token = hash.access_token;
+    if (accessToken) {
+        token = accessToken;
+        tokenExpiration = Date.now() + parseInt(expiresIn) * 1000;
+
         localStorage.setItem("spotify_token", token);
-        window.history.replaceState({}, document.title, redirectUri); // Remove token from URL
+        localStorage.setItem("spotify_token_expiration", tokenExpiration);
+
+        window.history.replaceState({}, document.title, redirectUri); // ✅ Clean URL
         initializePlayer();
     }
 }
 
-// 🔥 Initialize Spotify Web Playback SDK
+// ✅ Checks if the token is expired
+function isTokenExpired() {
+    return !token || !tokenExpiration || Date.now() > tokenExpiration;
+}
+
+// ✅ Initialize Spotify Web Playback SDK
 window.onSpotifyWebPlaybackSDKReady = () => {
-    if (token) {
+    if (!isTokenExpired()) {
         initializePlayer();
+    } else {
+        console.warn("Spotify Token Expired. Please log in again.");
+        localStorage.removeItem("spotify_token");
+        localStorage.removeItem("spotify_token_expiration");
     }
 };
 
@@ -54,7 +68,7 @@ function initializePlayer() {
     });
 
     player.addListener("ready", ({ device_id }) => {
-        console.log("Spotify Player Ready!", device_id);
+        console.log("Spotify Player Ready! Device ID:", device_id);
         playBtn.disabled = false;
         playBtn.dataset.deviceId = device_id;
     });
@@ -63,91 +77,12 @@ function initializePlayer() {
 
     player.addListener("authentication_error", ({ message }) => {
         console.error("Spotify Authentication Error:", message);
-        localStorage.removeItem("spotify_token"); // Clear invalid token
+        localStorage.removeItem("spotify_token"); // ✅ Clear invalid token
         alert("Spotify session expired. Please log in again.");
     });
 
     player.connect();
 }
 
-// 🔥 Fetches Playlist Tracks
-async function fetchPlaylistTracks() {
-    if (!token) {
-        console.error("No Spotify token available.");
-        return [];
-    }
-
-    const url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
-    try {
-        const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-
-        const data = await response.json();
-        return data.items.map(item => ({
-            title: item.track.name,
-            uri: item.track.uri
-        }));
-    } catch (error) {
-        console.error("Error fetching tracks:", error);
-        return [];
-    }
-}
-
-// 🔥 Plays a random 15-second clip
-async function playRandomSong() {
-    if (!token || !player) {
-        console.error("Spotify player not initialized or no token.");
-        return;
-    }
-
-    const tracks = await fetchPlaylistTracks();
-    if (tracks.length === 0) return;
-
-    const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-    const positionMs = Math.floor(Math.random() * 30000); // Random start position
-
-    try {
-        const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${playBtn.dataset.deviceId}`, {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ uris: [randomTrack.uri], position_ms: positionMs })
-        });
-
-        if (!response.ok) throw new Error(`Spotify Play Error: ${response.statusText}`);
-
-        startTimer();
-    } catch (error) {
-        console.error("Error playing song:", error);
-    }
-}
-
-// 🔥 Starts Light Bar Timer
-function startTimer() {
-    timerBar.style.width = "100%";
-    timerBar.style.transition = "none";
-    setTimeout(() => {
-        timerBar.style.transition = "width 15s linear";
-        timerBar.style.width = "0%";
-    }, 50);
-}
-
-// 🔥 Checks Answer
-async function checkAnswer() {
-    let guess = songInput.value.trim().toLowerCase();
-    const tracks = await fetchPlaylistTracks();
-    if (tracks.some(song => song.title.toLowerCase() === guess)) {
-        score++;
-        scoreDisplay.textContent = score;
-        playRandomSong();
-    }
-}
-
-// 🔥 Event Listeners
-playBtn.addEventListener("click", playRandomSong);
-document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-
-// 🔥 Check if the user just logged in
+// ✅ Check if user just logged in and extract token
 getAccessToken();
