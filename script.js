@@ -126,7 +126,8 @@ async function playRandomSong() {
         body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
     });
 
-    setTimeout(() => stopSong(currentSongTitle), 15000); // Stop song after 15 seconds
+    // Set a timer to stop the song after 15 seconds
+    setTimeout(() => stopSong(currentSongTitle), 15000);
 }
 
 // ✅ Stop Song and Show Correct Answer
@@ -153,7 +154,6 @@ async function stopSong(correctTitle) {
 function checkAnswer() {
     let guessedSong = songInput.value.trim().toLowerCase();
     if (guessedSong === currentSongTitle.toLowerCase()) {
-        stopSong(currentSongTitle);
         triggerConfetti();
 
         let currentScore = parseInt(scoreDisplay.textContent) + 1;
