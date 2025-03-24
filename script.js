@@ -85,6 +85,7 @@ function ensureToken() {
 
 // ✅ Initialize Spotify Web Playback SDK
 window.onSpotifyWebPlaybackSDKReady = () => {
+    console.log("Spotify Web Playback SDK is ready.");
     ensureToken();
     initializePlayer();
 };
@@ -93,6 +94,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
 function initializePlayer() {
     if (!token) return;
 
+    console.log("Initializing Spotify player...");
     player = new Spotify.Player({
         name: "Postle Malone Game",
         getOAuthToken: cb => { cb(token); },
@@ -101,10 +103,17 @@ function initializePlayer() {
 
     player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
+        console.log(`Spotify Player connected with device ID: ${deviceId}`);
         playBtn.disabled = false;
     });
 
-    player.connect();
+    player.connect().then(success => {
+        if (success) {
+            console.log("Spotify player connected successfully.");
+        } else {
+            console.error("Spotify player connection failed.");
+        }
+    });
 }
 
 // ✅ Play a random song for 15 seconds
