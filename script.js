@@ -147,10 +147,10 @@ async function playRandomSong() {
 
         // ✅ Reset & Start Light Bar
         lightBar.style.transition = "none";
-        lightBar.style.width = "0%";
+        lightBar.style.width = "100%"; // Start full
         setTimeout(() => {
             lightBar.style.transition = "width 15s linear";
-            lightBar.style.width = "100%";
+            lightBar.style.width = "0%"; // Shrink to 0%
         }, 50);
 
         setTimeout(() => stopSong(), 15000);
