@@ -18,27 +18,19 @@ const answerText = document.getElementById("answer-text");
 let player;
 let deviceId = null;
 let currentSongTitle = "";
-let timeoutId = null;
+let songList = [];
 
-// 🎵 Song Titles List (Kept Unchanged for Autocomplete)
-const songList = [
-    "92 Explorer", "A Thousand Bad Times", "Ain’t How It Ends", "Allergic",
-    "Back To Texas", "Ball For Me (feat. Nicki Minaj)", "Better Now", "Big Lie",
-    "Blame It On Me", "Broken Whiskey Glass", "Buyer Beware", "California Sober (Feat. Chris Stapleton)",
-    "Candy Paint", "Chemical", "Circles", "Cold", "Congratulations (feat. Quavo)",
-    "Cooped Up (with Roddy Ricch)", "Dead At The Honky Tonk", "Deja Vu", "Devil I've Been (Feat. ERNEST)",
-    "Die For Me (feat. Future & Halsey)", "Don't Understand", "Enemies (feat. DaBaby)", 
-    "Enough Is Enough", "Euthanasia", "Fallin’ In Love", "Feeling Whitney", "Go Flex", 
-    "Goodbyes (feat. Young Thug)", "Hollywood's Bleeding", "I Fall Apart", "I Had Some Help (Feat. Morgan Wallen)",
-    "I Like You (A Happier Song) (with Doja Cat)", "Insane", "Jonestown (Interlude)", 
-    "Love/Hate Letter To Alcohol (with Fleet Foxes)", "Mourning", "Overdrive", "Psycho (feat. Ty Dolla $ign)", 
-    "Sunflower - Spider-Man: Into the Spider-Verse", "Take What You Want (feat. Ozzy Osbourne & Travis Scott)",
-    "White Iverson", "Wow.", "rockstar (feat. 21 Savage)"
-];
+// 🎉 Confetti Effect
+function triggerConfetti() {
+    confetti({
+        particleCount: 200,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
 
 // ✅ Redirect user to Spotify login
 loginBtn.addEventListener("click", () => {
-    console.log("Login button clicked. Redirecting to Spotify...");
     const authUrl = `https://accounts.spotify.com/authorize` +
         `?client_id=${clientId}` +
         `&response_type=token` +
@@ -50,7 +42,6 @@ loginBtn.addEventListener("click", () => {
 
 // ✅ Extract and store access token
 function getAccessToken() {
-    console.log("Checking for access token...");
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get("access_token");
     const expiresIn = hashParams.get("expires_in");
@@ -64,7 +55,7 @@ function getAccessToken() {
 
         window.history.replaceState({}, document.title, redirectUri);
         loginBtn.textContent = "Login Successful";
-        console.log("Access token obtained.");
+        fetchPlaylistSongs();
     }
 }
 
@@ -76,6 +67,7 @@ function isTokenExpired() {
 // ✅ Prevent Login Loop
 function ensureToken() {
     if (isTokenExpired()) {
+        console.warn("Spotify Token Expired. Redirecting to login...");
         localStorage.removeItem("spotify_token");
         localStorage.removeItem("spotify_token_expiration");
         loginBtn.textContent = "Login to Spotify";  
@@ -84,16 +76,37 @@ function ensureToken() {
 
 // ✅ Initialize Spotify Web Playback SDK
 window.onSpotifyWebPlaybackSDKReady = () => {
-    console.log("Spotify Web Playback SDK is ready.");
+    console.log("✅ Spotify Web Playback SDK is ready.");
     ensureToken();
     initializePlayer();
 };
+
+// ✅ Fetch playlist songs for autocomplete
+async function fetchPlaylistSongs() {
+    if (!token) return;
+    try {
+        const response = await fetch("songs_list.txt");
+        const text = await response.text();
+        songList = text.split("\n").map(song => song.trim()).filter(song => song.length > 0);
+
+        console.log("✅ Songs list loaded:", songList);
+
+        // ✅ Populate datalist
+        datalist.innerHTML = "";
+        songList.forEach(song => {
+            let option = document.createElement("option");
+            option.value = song;
+            datalist.appendChild(option);
+        });
+    } catch (error) {
+        console.error("❌ Error loading songs list:", error);
+    }
+}
 
 // ✅ Initialize Spotify Player
 function initializePlayer() {
     if (!token) return;
 
-    console.log("Initializing Spotify player...");
     player = new Spotify.Player({
         name: "Postle Malone Game",
         getOAuthToken: cb => { cb(token); },
@@ -102,102 +115,98 @@ function initializePlayer() {
 
     player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
-        console.log(`Spotify Player connected with device ID: ${deviceId}`);
         playBtn.disabled = false;
-        transferPlayback();
     });
 
-    player.connect().then(success => {
-        if (success) {
-            console.log("Spotify player connected successfully.");
-        } else {
-            console.error("Spotify player connection failed.");
-        }
-    });
+    player.connect();
 }
 
-// ✅ Transfer Playback to Web Player
-function transferPlayback() {
-    fetch("https://api.spotify.com/v1/me/player", {
-        method: "PUT",
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ device_ids: [deviceId], play: false })
-    })
-    .then(response => {
-        if (response.status === 204) {
-            console.log("Playback transferred to web player.");
-        } else {
-            console.error("Failed to transfer playback.", response);
-        }
-    })
-    .catch(error => console.error("Error transferring playback:", error));
-}
+// ✅ Play a random song for 15 seconds
+async function playRandomSong() {
+    if (!deviceId) return;
 
-// ✅ Fetch and play a random song from the playlist
-function fetchAndPlayRandomTrack() {
-    fetch("https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks", {
-        headers: { "Authorization": `Bearer ${token}` }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.items || data.items.length === 0) {
-            console.error("No songs found in the playlist.");
-            return;
-        }
-        
-        let trackUris = data.items.map(item => item.track.uri);
-        let randomTrackUri = trackUris[Math.floor(Math.random() * trackUris.length)];
-        playTrack(randomTrackUri);
-    })
-    .catch(error => console.error("Error fetching playlist tracks:", error));
-}
+    try {
+        const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
 
-// ✅ Play a track for 15 seconds
-function playTrack(trackUri) {
-    if (!deviceId) {
-        console.error("Device ID not set. Cannot play song.");
-        return;
+        if (!response.ok) throw new Error();
+
+        const data = await response.json();
+        const tracks = data.items;
+
+        const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+        const randomStartMs = Math.floor(Math.random() * 30000);
+        currentSongTitle = randomTrack.track.name;
+
+        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+            method: "PUT",
+            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
+        });
+
+        // ✅ Reset & Start Light Bar
+        lightBar.style.transition = "none";
+        lightBar.style.width = "0%";
+        setTimeout(() => {
+            lightBar.style.transition = "width 15s linear";
+            lightBar.style.width = "100%";
+        }, 50);
+
+        setTimeout(() => stopSong(), 15000);
+    } catch (error) {
+        console.error("❌ Error fetching or playing track:", error);
     }
-
-    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: "PUT",
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ uris: [trackUri], position_ms: Math.floor(Math.random() * 15000) })
-    })
-    .then(response => {
-        if (response.status === 204) {
-            console.log("Song is playing!");
-            stopTrackAfterDelay(); // Stop playback after 15 seconds
-        } else {
-            console.error("Failed to play song:", response);
-        }
-    })
-    .catch(error => console.error("Error playing song:", error));
 }
 
-// ✅ Stop playback after 15 seconds
-function stopTrackAfterDelay() {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-        fetch("https://api.spotify.com/v1/me/player/pause", {
+// ✅ Stop Song
+async function stopSong() {
+    try {
+        await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
             method: "PUT",
             headers: { "Authorization": `Bearer ${token}` }
-        })
-        .then(() => console.log("Song stopped after 15 seconds"))
-        .catch(error => console.error("Error stopping song:", error));
-    }, 15000);
+        });
+
+        // ✅ Show Correct Answer
+        answerText.textContent = currentSongTitle;
+        correctAnswerDisplay.style.visibility = "visible";
+    } catch (error) {
+        console.error("❌ Error stopping song:", error);
+    }
 }
 
-// ✅ Play button event
-playBtn.addEventListener("click", () => {
-    console.log("Play button clicked. Fetching a song from the playlist...");
-    fetchAndPlayRandomTrack();
+// ✅ Check answer
+function checkAnswer() {
+    let guessedSong = songInput.value.trim().toLowerCase();
+    if (guessedSong === currentSongTitle.toLowerCase()) {
+        stopSong();
+        triggerConfetti();
+        let currentScore = parseInt(scoreDisplay.textContent) + 1;
+        scoreDisplay.textContent = currentScore;
+
+        if (currentScore > highScore) {
+            highScore = currentScore;
+            localStorage.setItem("high_score", highScore);
+            highScoreDisplay.textContent = highScore;
+
+            // ✅ Play "Congratulations" if a new high score is achieved
+            setTimeout(() => {
+                new Audio("congratulations.mp3").play();
+            }, 1000);
+        }
+
+        songInput.value = "";
+        setTimeout(() => playRandomSong(), 3000); // Next song after 3 seconds
+    } else {
+        songInput.classList.add("shake");
+        setTimeout(() => songInput.classList.remove("shake"), 500);
+        songInput.value = "";
+    }
+}
+
+document.getElementById("submit-btn").addEventListener("click", checkAnswer);
+songInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") checkAnswer();
 });
 
 getAccessToken();
