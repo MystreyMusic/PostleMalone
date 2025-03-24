@@ -3,15 +3,19 @@ const redirectUri = "https://mystreymusic.github.io/PostleMalone/";
 
 let token = localStorage.getItem("spotify_token");
 let tokenExpiration = localStorage.getItem("spotify_token_expiration");
+let highScore = localStorage.getItem("high_score") || 0;
 
 const loginBtn = document.getElementById("login-btn");
 const playBtn = document.getElementById("play-btn");
 const songInput = document.getElementById("song-guess");
 const scoreDisplay = document.getElementById("score");
 const lightBar = document.getElementById("light-bar");
+const datalist = document.getElementById("song-list");
 
 let player;
 let deviceId = null;
+let currentSongTitle = "";
+let songList = [];
 
 // 🎉 **Confetti Effect**
 function triggerConfetti() {
@@ -47,6 +51,7 @@ function getAccessToken() {
         localStorage.setItem("spotify_token_expiration", tokenExpiration);
 
         window.history.replaceState({}, document.title, redirectUri);
+        fetchPlaylistSongs();
     } else {
         console.error("Failed to get Spotify token.");
     }
@@ -71,10 +76,26 @@ function ensureToken() {
 // ✅ **Initialize Spotify Web Playback SDK**
 window.onSpotifyWebPlaybackSDKReady = () => {
     console.log("✅ Spotify Web Playback SDK is ready.");
-    
     ensureToken();
     initializePlayer();
 };
+
+// ✅ **Fetch playlist songs for autocomplete**
+async function fetchPlaylistSongs() {
+    try {
+        const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error("❌ Failed to fetch playlist songs");
+
+        const data = await response.json();
+        songList = data.items.map(item => item.track.name.toLowerCase());
+        console.log("🎵 Fetched song list for autocomplete:", songList);
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 function initializePlayer() {
     if (!token) {
@@ -107,7 +128,13 @@ function initializePlayer() {
         window.location.href = redirectUri;
     });
 
-    player.connect();
+    player.connect().then(success => {
+        if (success) {
+            console.log("✅ Successfully connected to Spotify!");
+        } else {
+            console.error("❌ Failed to connect to Spotify.");
+        }
+    });
 }
 
 // ✅ **Play a random song at a random timestamp for 15 seconds**
@@ -120,16 +147,15 @@ playBtn.addEventListener("click", async () => {
 
     console.log("🎵 Fetching playlist tracks...");
 
-    // 🔥 **Get playlist tracks**
     try {
-        const playlistResponse = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
+        const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
 
-        if (!playlistResponse.ok) throw new Error(`❌ Failed to fetch playlist tracks`);
+        if (!response.ok) throw new Error("❌ Failed to fetch playlist tracks");
 
-        const playlistData = await playlistResponse.json();
-        const tracks = playlistData.items.map(item => item.track.id);
+        const data = await response.json();
+        const tracks = data.items;
 
         if (tracks.length === 0) {
             console.error("❌ No tracks found in the playlist.");
@@ -138,22 +164,20 @@ playBtn.addEventListener("click", async () => {
 
         // 🎶 **Pick a random track**
         const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-        const randomStartMs = Math.floor(Math.random() * 30000); // Start at a random point within the first 30 sec
+        const randomStartMs = Math.floor(Math.random() * 30000);
+        currentSongTitle = randomTrack.track.name.toLowerCase();
 
-        console.log(`🎵 Playing track: ${randomTrack} at ${randomStartMs}ms`);
+        console.log(`🎵 Now Playing: ${currentSongTitle} at ${randomStartMs}ms`);
 
-        // ✅ **Start playback**
         await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
             method: "PUT",
             headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ uris: [`spotify:track:${randomTrack}`], position_ms: randomStartMs })
+            body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
         });
 
-        // 🔥 **Light Bar Animation**
         lightBar.style.transition = "width 15s linear";
         lightBar.style.width = "0%";
 
-        // ⏳ **Stop playback after 15 seconds**
         setTimeout(async () => {
             await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
                 method: "PUT",
@@ -167,17 +191,40 @@ playBtn.addEventListener("click", async () => {
     }
 });
 
-// ✅ **Submit button click event - Check answer and trigger confetti**
-document.getElementById("submit-btn").addEventListener("click", () => {
-    const guessedSong = songInput.value.trim().toLowerCase();
-    const correctSong = "congratulations"; // Replace this with dynamic checking
+// ✅ **Autocomplete Function**
+songInput.addEventListener("input", () => {
+    let inputValue = songInput.value.toLowerCase();
+    let suggestions = songList.filter(song => song.startsWith(inputValue));
 
-    if (guessedSong === correctSong) {
-        triggerConfetti(); // 🎉 Confetti on correct answer
-        scoreDisplay.textContent = parseInt(scoreDisplay.textContent) + 1;
-        songInput.value = ""; // Clear input after correct guess
-    }
+    datalist.innerHTML = "";
+    suggestions.forEach(song => {
+        let option = document.createElement("option");
+        option.value = song;
+        datalist.appendChild(option);
+    });
 });
 
-// ✅ **Check if user just logged in and extract token**
+// ✅ **Check answer on submit or Enter key**
+function checkAnswer() {
+    let guessedSong = songInput.value.trim().toLowerCase();
+    if (guessedSong === currentSongTitle) {
+        triggerConfetti();
+        let currentScore = parseInt(scoreDisplay.textContent) + 1;
+        scoreDisplay.textContent = currentScore;
+
+        if (currentScore > highScore) {
+            highScore = currentScore;
+            localStorage.setItem("high_score", highScore);
+        }
+
+        songInput.value = "";
+    }
+}
+
+document.getElementById("submit-btn").addEventListener("click", checkAnswer);
+songInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") checkAnswer();
+});
+
+// ✅ **Check user login and extract token**
 getAccessToken();
