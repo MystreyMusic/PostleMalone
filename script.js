@@ -115,15 +115,42 @@ function initializePlayer() {
 
     player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
+        console.log("✅ Player is ready. Device ID:", deviceId);
         playBtn.disabled = false;
+        transferPlayback(); // ✅ Ensure playback is transferred to browser
     });
 
-    player.connect();
+    player.connect().then(success => {
+        if (success) {
+            console.log("✅ Spotify Player connected successfully.");
+        } else {
+            console.error("❌ ERROR: Failed to connect player.");
+        }
+    });
+}
+
+// ✅ Transfer Playback to Browser
+async function transferPlayback() {
+    try {
+        console.log("🔄 Transferring playback to browser...");
+        await fetch("https://api.spotify.com/v1/me/player", {
+            method: "PUT",
+            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ device_ids: [deviceId], play: true })
+        });
+    } catch (error) {
+        console.error("❌ Error transferring playback:", error);
+    }
 }
 
 // ✅ Play a random song for 15 seconds
 async function playRandomSong() {
-    if (!deviceId) return;
+    console.log("🎵 Attempting to play a random song...");
+    console.log("🔍 Device ID:", deviceId);
+    if (!deviceId) {
+        console.error("❌ ERROR: Device ID is missing! Ensure Spotify Web Playback SDK is ready.");
+        return;
+    }
 
     try {
         const response = await fetch(`https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks`, {
@@ -144,6 +171,8 @@ async function playRandomSong() {
             headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
         });
+
+        transferPlayback(); // ✅ Ensure playback is in the browser
 
         // ✅ Reset & Start Light Bar
         lightBar.style.transition = "none";
@@ -175,18 +204,19 @@ async function stopSong() {
     }
 }
 
+// ✅ Check Answer
 function checkAnswer() {
-    let guessedSong = songInput.value.trim().toLowerCase();
-    
+    let guessedSong = songInput.value.trim();
+
     // Prevent blank answers from being accepted
-    if (guessedSong === "") {
+    if (!guessedSong) {
         songInput.classList.add("shake");
         setTimeout(() => songInput.classList.remove("shake"), 500);
         songInput.value = "";
-        return; // Exit function early
+        return;
     }
 
-    if (guessedSong === currentSongTitle.toLowerCase()) {
+    if (guessedSong.toLowerCase() === currentSongTitle.toLowerCase()) {
         stopSong();
         triggerConfetti();
         let currentScore = parseInt(scoreDisplay.textContent) + 1;
@@ -197,14 +227,13 @@ function checkAnswer() {
             localStorage.setItem("high_score", highScore);
             highScoreDisplay.textContent = highScore;
 
-            // ✅ Play "Congratulations" if a new high score is achieved
             setTimeout(() => {
                 new Audio("congratulations.mp3").play();
             }, 1000);
         }
 
         songInput.value = "";
-        setTimeout(() => playRandomSong(), 3000); // Next song after 3 seconds
+        setTimeout(() => playRandomSong(), 3000);
     } else {
         songInput.classList.add("shake");
         setTimeout(() => songInput.classList.remove("shake"), 500);
