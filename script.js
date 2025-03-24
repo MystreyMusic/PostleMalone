@@ -18,8 +18,9 @@ const answerText = document.getElementById("answer-text");
 let player;
 let deviceId = null;
 let currentSongTitle = "";
+let timeoutId = null;
 
-// 🎵 Song Titles List
+// 🎵 Song Titles List (Kept Unchanged for Autocomplete)
 const songList = [
     "92 Explorer", "A Thousand Bad Times", "Ain’t How It Ends", "Allergic",
     "Back To Texas", "Ball For Me (feat. Nicki Minaj)", "Better Now", "Big Lie",
@@ -34,11 +35,6 @@ const songList = [
     "Sunflower - Spider-Man: Into the Spider-Verse", "Take What You Want (feat. Ozzy Osbourne & Travis Scott)",
     "White Iverson", "Wow.", "rockstar (feat. 21 Savage)"
 ];
-
-// 🎉 Confetti Effect
-function triggerConfetti() {
-    confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
-}
 
 // ✅ Redirect user to Spotify login
 loginBtn.addEventListener("click", () => {
@@ -108,7 +104,7 @@ function initializePlayer() {
         deviceId = device_id;
         console.log(`Spotify Player connected with device ID: ${deviceId}`);
         playBtn.disabled = false;
-        transferPlayback(); // ✅ Transfer playback to the web player
+        transferPlayback();
     });
 
     player.connect().then(success => {
@@ -140,8 +136,8 @@ function transferPlayback() {
     .catch(error => console.error("Error transferring playback:", error));
 }
 
-// ✅ Fetch songs from the playlist and play a random one
-function fetchPlaylistTracks() {
+// ✅ Fetch and play a random song from the playlist
+function fetchAndPlayRandomTrack() {
     fetch("https://api.spotify.com/v1/playlists/7LlnI4VRxopojzcvDLvGko/tracks", {
         headers: { "Authorization": `Bearer ${token}` }
     })
@@ -159,7 +155,7 @@ function fetchPlaylistTracks() {
     .catch(error => console.error("Error fetching playlist tracks:", error));
 }
 
-// ✅ Play a track by URI
+// ✅ Play a track for 15 seconds
 function playTrack(trackUri) {
     if (!deviceId) {
         console.error("Device ID not set. Cannot play song.");
@@ -174,14 +170,34 @@ function playTrack(trackUri) {
         },
         body: JSON.stringify({ uris: [trackUri], position_ms: Math.floor(Math.random() * 15000) })
     })
-    .then(response => response.status === 204 ? console.log("Song is playing!") : console.error("Failed to play song:", response))
+    .then(response => {
+        if (response.status === 204) {
+            console.log("Song is playing!");
+            stopTrackAfterDelay(); // Stop playback after 15 seconds
+        } else {
+            console.error("Failed to play song:", response);
+        }
+    })
     .catch(error => console.error("Error playing song:", error));
+}
+
+// ✅ Stop playback after 15 seconds
+function stopTrackAfterDelay() {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+        fetch("https://api.spotify.com/v1/me/player/pause", {
+            method: "PUT",
+            headers: { "Authorization": `Bearer ${token}` }
+        })
+        .then(() => console.log("Song stopped after 15 seconds"))
+        .catch(error => console.error("Error stopping song:", error));
+    }, 15000);
 }
 
 // ✅ Play button event
 playBtn.addEventListener("click", () => {
     console.log("Play button clicked. Fetching a song from the playlist...");
-    fetchPlaylistTracks();
+    fetchAndPlayRandomTrack();
 });
 
 getAccessToken();
