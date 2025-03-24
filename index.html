@@ -24,7 +24,7 @@
             <!-- Play Button -->
             <button id="play-btn" disabled>
                 Play
-                <div id="light-bar"></div> <!-- 🔥 Light Bar Unchanged -->
+                <div id="light-bar"></div> <!-- 🔥 Light Bar -->
             </button>
 
             <input type="text" id="song-guess" placeholder="Guess the song">
@@ -34,14 +34,20 @@
         <div id="feedback"></div>
     </div>
 
-    <div id="confetti-container"></div> <!-- 🔥 Confetti Unchanged -->
+    <!-- ✅ Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
 
     <footer>
         <p>Created by William B.</p>
         <p>This game is a fan project and is not affiliated with or endorsed by Post Malone or his record label.</p>
     </footer>
 
+    <!-- ✅ Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
+    
+    <!-- ✅ Spotify SDK -->
     <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>
