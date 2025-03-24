@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Postle Malone</title>
+    
+    <!-- ✅ Post Malone Icon -->
+    <link rel="icon" type="image/x-icon" href="postmalone.ico">
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,24 +22,26 @@
         <div id="song-container">
             <p>Listen to the clip and guess the song:</p>
             
-            <!-- Spotify Login Button -->
+            <!-- ✅ Spotify Login Button -->
             <button id="login-btn">Login with Spotify</button>
-            
-            <!-- Play Button -->
+
+            <!-- ✅ Play Button -->
             <button id="play-btn" disabled>
                 Play
-                <div id="light-bar"></div> <!-- 🔥 Light Bar -->
+                <div id="light-bar"></div> <!-- ✅ Light Bar Timer -->
             </button>
 
-            <input type="text" id="song-guess" placeholder="Guess the song">
-            <div id="autocomplete-box"></div>
+            <!-- ✅ Correct Answer Display -->
+            <p id="correct-answer"></p> 
+
+            <!-- ✅ Song Input with Autocomplete -->
+            <input type="text" id="song-guess" placeholder="Guess the song" list="song-list">
+            <datalist id="song-list"></datalist> 
+
             <button id="submit-btn">Submit Guess</button>
         </div>
         <div id="feedback"></div>
     </div>
-
-    <!-- ✅ Confetti Canvas -->
-    <canvas id="confetti-canvas"></canvas>
 
     <footer>
         <p>Created by William B.</p>
