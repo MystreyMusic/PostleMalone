@@ -60,27 +60,14 @@ function isTokenExpired() {
     return !token || !tokenExpiration || Date.now() > tokenExpiration;
 }
 
-// ✅ Prevent Login Loop & Expired Token Errors
+// ✅ Prevent Login Loop
 function ensureToken() {
     if (isTokenExpired()) {
         console.warn("Spotify Token Expired. Redirecting to login...");
         localStorage.removeItem("spotify_token");
         localStorage.removeItem("spotify_token_expiration");
         loginBtn.textContent = "Login to Spotify";  
-    } else {
-        loginBtn.textContent = "Login Successful";
     }
-}
-
-// ✅ Stop Song Function (Moved Above to Fix Undefined Error)
-function stopSong() {
-    fetch("https://api.spotify.com/v1/me/player/pause", {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    answerText.textContent = `Correct Answer: ${currentSongTitle}`;
-    correctAnswerDisplay.style.display = "block";
 }
 
 // ✅ Initialize Spotify Web Playback SDK
@@ -106,7 +93,7 @@ async function fetchPlaylistSongs() {
     }
 }
 
-// ✅ Autocomplete (Fixed Matching Only Beginning)
+// ✅ Autocomplete (Fix: Only Matching Beginning)
 songInput.addEventListener("input", () => {
     const inputText = songInput.value.trim().toLowerCase();
     datalist.innerHTML = "";
@@ -187,6 +174,17 @@ async function playRandomSong() {
     } catch (error) {
         console.error("❌ Error playing track:", error);
     }
+}
+
+// ✅ Stop Song Fix
+function stopSong() {
+    fetch("https://api.spotify.com/v1/me/player/pause", {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${token}` }
+    });
+
+    answerText.textContent = `Correct Answer: ${currentSongTitle}`;
+    correctAnswerDisplay.style.display = "block";
 }
 
 // ✅ Submit Guess
