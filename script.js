@@ -16,24 +16,17 @@ const answerText = document.getElementById("answer-text");
 const submitBtn = document.getElementById("submit-btn");
 const lightBar = document.getElementById("light-bar"); // Light bar element for countdown
 
-let songList = []; // Store the song list dynamically
+// 🎶 Manually defined song list (update with your actual song names)
+let songList = [
+    "song1",  // Replace with your actual song names (without the file extension)
+    "song2",
+    "song3",
+    // Add more songs here...
+];
 
 // 🎉 Confetti Effect
 function triggerConfetti() {
     confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
-}
-
-// ✅ Load the song list from the music folder (dynamically)
-function loadSongList() {
-    // Assuming your server allows fetching the file list
-    fetch("songs_data.txt")
-        .then(response => response.text())
-        .then(data => {
-            songList = data.split("\n").map(song => song.replace(".mp3", ""));
-            console.log("✅ Song list loaded:", songList);
-            playBtn.disabled = false; // Enable play button after loading
-        })
-        .catch(error => console.error("Error loading song list:", error));
 }
 
 // ✅ Play a random song from the list and random 15-second interval
@@ -154,4 +147,7 @@ submitBtn.addEventListener("click", checkAnswer); // ✅ Fixes submit button
 playBtn.addEventListener("click", playRandomSong); // Activate play button
 
 // Load the song list once the page is loaded
-window.onload = loadSongList;
+window.onload = () => {
+    // Song list is already loaded manually above, so no need for fetch anymore
+    playBtn.disabled = false; // Enable play button
+};
