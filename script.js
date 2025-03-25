@@ -18,9 +18,9 @@ const lightBar = document.getElementById("light-bar"); // Light bar element for 
 
 // 🎶 Manually defined song list (update with your actual song names)
 let songList = [
-    "song1",  // Replace with your actual song names (without the file extension)
-    "song2",
-    "song3",
+    "01 Broken Whiskey Glass",  // Replace with your actual song names (without the file extension)
+    "02 Big Lie",
+    "03 Deja Vu (feat. Justin Bieber)",
     // Add more songs here...
 ];
 
