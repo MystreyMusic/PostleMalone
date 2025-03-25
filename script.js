@@ -16,18 +16,12 @@ const submitBtn = document.getElementById("submit-btn");
 const lightBar = document.getElementById("light-bar");
 let songList = [];
 
-// 🎶 Fetch song list dynamically from the music folder
+// 🎶 Fetch song list from a predefined file
 async function fetchSongs() {
     try {
-        const response = await fetch(musicFolder);
+        const response = await fetch("songs_list.txt");
         const text = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, "text/html");
-        const links = doc.querySelectorAll("a");
-        songList = [...links]
-            .map(link => link.textContent)
-            .filter(name => name.endsWith(".mp3"))
-            .map(name => name.replace(".mp3", ""));
+        songList = text.split("\n").map(name => name.trim()).filter(name => name);
     } catch (error) {
         console.error("Error fetching songs:", error);
     }
@@ -46,23 +40,30 @@ function playRandomSong() {
     currentSongTitle = randomSong;
     audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
     audioPlayer.load();
-    audioPlayer.oncanplaythrough = () => {
-        const randomStartTime = Math.floor(Math.random() * (audioPlayer.duration - 15));
+    
+    audioPlayer.onloadedmetadata = () => {
+        const maxStartTime = Math.max(0, audioPlayer.duration - 15);
+        const randomStartTime = Math.floor(Math.random() * maxStartTime);
         audioPlayer.currentTime = randomStartTime;
         audioPlayer.play().then(() => {
             console.log("Playing song:", randomSong);
         }).catch(error => {
             console.error("Error playing the song:", error);
         });
-        lightBar.style.transition = "none";
-        lightBar.style.width = "100%";
-        setTimeout(() => {
-            lightBar.style.transition = "width 15s linear";
-            lightBar.style.width = "0%";
-        }, 50);
-        clearTimeout(roundTimeout);
-        roundTimeout = setTimeout(stopSong, 15000);
+        startTimer();
     };
+}
+
+// ✅ Start 15-second countdown
+function startTimer() {
+    lightBar.style.transition = "none";
+    lightBar.style.width = "100%";
+    setTimeout(() => {
+        lightBar.style.transition = "width 15s linear";
+        lightBar.style.width = "0%";
+    }, 50);
+    clearTimeout(roundTimeout);
+    roundTimeout = setTimeout(stopSong, 15000);
 }
 
 // ✅ Stop the song and show the correct answer
