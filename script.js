@@ -47,24 +47,35 @@ function playRandomSong() {
     currentSongTitle = randomSong; // Set the current song title
 
     // Select a random start time for the 15-second segment (to avoid memorization)
-    const randomStartTime = Math.floor(Math.random() * (audioPlayer.duration - 15));
-
-    // Update the audio source and play it
     audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
-    audioPlayer.currentTime = randomStartTime; // Set the start time for the song
-    audioPlayer.play();
+    audioPlayer.load(); // Ensure the audio is properly loaded
 
-    // Show the light bar (timing of the 15-second countdown)
-    lightBar.style.transition = "none";
-    lightBar.style.width = "100%";
-    setTimeout(() => {
-        lightBar.style.transition = "width 15s linear";
-        lightBar.style.width = "0%";
-    }, 50);
+    // Wait until the audio is loaded and then set the random start time
+    audioPlayer.oncanplaythrough = () => {
+        const randomStartTime = Math.floor(Math.random() * (audioPlayer.duration - 15));
 
-    // Set timeout to stop the song after 15 seconds
-    clearTimeout(roundTimeout);
-    roundTimeout = setTimeout(stopSong, 15000);
+        console.log("Playing song:", randomSong);
+        console.log("Song URL:", audioPlayer.src);
+
+        audioPlayer.currentTime = randomStartTime; // Set the start time for the song
+        audioPlayer.play().then(() => {
+            console.log("Song is playing!");
+        }).catch(error => {
+            console.error("Error playing the song:", error);
+        });
+
+        // Show the light bar (timing of the 15-second countdown)
+        lightBar.style.transition = "none";
+        lightBar.style.width = "100%";
+        setTimeout(() => {
+            lightBar.style.transition = "width 15s linear";
+            lightBar.style.width = "0%";
+        }, 50);
+
+        // Set timeout to stop the song after 15 seconds
+        clearTimeout(roundTimeout);
+        roundTimeout = setTimeout(stopSong, 15000);
+    };
 }
 
 // ✅ Stop the song and show correct answer
