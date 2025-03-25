@@ -13,6 +13,7 @@ const highScoreDisplay = document.getElementById("high-score");
 const correctAnswerDisplay = document.getElementById("correct-answer");
 const answerText = document.getElementById("answer-text");
 const submitBtn = document.getElementById("submit-btn");
+const lightBar = document.getElementById("light-bar"); // Light bar element for countdown
 
 let songList = []; // Store the song list dynamically
 
@@ -23,16 +24,21 @@ function triggerConfetti() {
 
 // ✅ Load the song list from the music folder
 function loadSongList() {
-    // Manually add the MP3 song titles here (you can expand this list if you want)
-    // Assuming your music folder contains "song1.mp3", "song2.mp3", etc.
-    songList = [
-        "song1",
-        "song2",
-        "song3",
-        "song4", // Add the song titles here
-        // Add more songs as needed
-    ];
-    console.log("✅ Song list loaded:", songList);
+    // Fetch all the MP3 files in the music folder dynamically
+    fetch(musicFolder)
+        .then(response => response.text())
+        .then(data => {
+            // Assuming your server lists the MP3 files in the folder
+            const songs = data.split("\n").filter(song => song.endsWith(".mp3"));
+            songList = songs.map(song => song.replace(".mp3", ""));
+            console.log("✅ Song list loaded:", songList);
+
+            // Enable play button after loading songs
+            playBtn.disabled = false;
+        })
+        .catch(error => {
+            console.error("Error loading song list:", error);
+        });
 }
 
 // ✅ Play a random song from the list
@@ -103,7 +109,7 @@ songInput.addEventListener("input", () => {
 
     matchingSongs.forEach(song => {
         let option = document.createElement("option");
-        option.value = song;
+        option.value = song; // Suggest the song title without the .mp3 extension
         datalist.appendChild(option);
     });
 });
@@ -115,7 +121,7 @@ songInput.addEventListener("keypress", (e) => {
 
 submitBtn.addEventListener("click", checkAnswer); // ✅ Fixes submit button
 
-playBtn.addEventListener("click", playRandomSong);
+playBtn.addEventListener("click", playRandomSong); // Activate play button
 
 // Load the song list once the page is loaded
 window.onload = loadSongList;
