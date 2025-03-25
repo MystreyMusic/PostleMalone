@@ -1,224 +1,70 @@
-const clientId = "7e4affc97a3c47b2ade0c57322b0a407"; 
-const redirectUri = "https://mystreymusic.github.io/PostleMalone/";
-
-let token = localStorage.getItem("spotify_token");
-let tokenExpiration = localStorage.getItem("spotify_token_expiration");
-let highScore = localStorage.getItem("high_score") || 0;
 let currentScore = 0; // Track current score
+let highScore = localStorage.getItem("high_score") || 0;
+let currentSongTitle = "";
+let roundTimeout;
+let audioPlayer = new Audio();
 
-const loginBtn = document.getElementById("login-btn");
+const musicFolder = "music"; // Folder where the MP3s are stored
 const playBtn = document.getElementById("play-btn");
 const songInput = document.getElementById("song-guess");
 const datalist = document.getElementById("song-list");
 const scoreDisplay = document.getElementById("score");
 const highScoreDisplay = document.getElementById("high-score");
-const lightBar = document.getElementById("light-bar");
 const correctAnswerDisplay = document.getElementById("correct-answer");
 const answerText = document.getElementById("answer-text");
 const submitBtn = document.getElementById("submit-btn");
 
-let player;
-let deviceId = null;
-let currentSongTitle = "";
-let songList = [];
-let playerConnected = false;
-let roundTimeout;
-
-const playlistId = "7LlnI4VRxopojzcvDLvGko"; // Post Malone playlist
+let songList = []; // Store the song list dynamically
 
 // 🎉 Confetti Effect
 function triggerConfetti() {
     confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
 }
 
-// ✅ Redirect user to Spotify login
-loginBtn.addEventListener("click", () => {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state&show_dialog=true`;
+// ✅ Load the song list from the music folder
+function loadSongList() {
+    // Manually add the MP3 song titles here (you can expand this list if you want)
+    // Assuming your music folder contains "song1.mp3", "song2.mp3", etc.
+    songList = [
+        "song1",
+        "song2",
+        "song3",
+        "song4", // Add the song titles here
+        // Add more songs as needed
+    ];
+    console.log("✅ Song list loaded:", songList);
+}
 
-    // Try to open Spotify app using deep link (for mobile devices)
-    const spotifyLink = `spotify://authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state`;
+// ✅ Play a random song from the list
+function playRandomSong() {
+    if (songList.length === 0) return; // Ensure the song list is not empty
 
-    window.location.href = spotifyLink; // Redirect to the Spotify app (if available)
-    
-    // Fallback to web login if the app is not available (on desktop browsers)
+    // Select a random song from the list
+    const randomIndex = Math.floor(Math.random() * songList.length);
+    const randomSong = songList[randomIndex];
+
+    currentSongTitle = randomSong; // Set the current song title
+
+    // Update the audio source and play it
+    audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
+    audioPlayer.play();
+
+    // Show the light bar (timing of the 15-second countdown)
+    lightBar.style.transition = "none";
+    lightBar.style.width = "100%";
     setTimeout(() => {
-        window.location.href = authUrl;
-    }, 500); 
-});
+        lightBar.style.transition = "width 15s linear";
+        lightBar.style.width = "0%";
+    }, 50);
 
-// ✅ Extract and store access token
-function getAccessToken() {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-    const expiresIn = hashParams.get("expires_in");
-
-    if (accessToken) {
-        token = accessToken;
-        tokenExpiration = Date.now() + parseInt(expiresIn) * 1000;
-
-        localStorage.setItem("spotify_token", token);
-        localStorage.setItem("spotify_token_expiration", tokenExpiration);
-
-        window.history.replaceState({}, document.title, redirectUri);
-        loginBtn.textContent = "Login Successful";
-        fetchPlaylistSongs();
-    }
+    // Set timeout to stop the song after 15 seconds
+    clearTimeout(roundTimeout);
+    roundTimeout = setTimeout(stopSong, 15000);
 }
 
-// ✅ Check if token is expired
-function isTokenExpired() {
-    return !token || !tokenExpiration || Date.now() > tokenExpiration;
-}
-
-// ✅ Prevent Login Loop
-function ensureToken() {
-    if (isTokenExpired()) {
-        console.warn("Spotify Token Expired. Redirecting to login...");
-        localStorage.removeItem("spotify_token");
-        localStorage.removeItem("spotify_token_expiration");
-        loginBtn.textContent = "Login to Spotify";  
-    }
-}
-
-// ✅ Initialize Spotify Web Playback SDK
-window.onSpotifyWebPlaybackSDKReady = () => {
-    console.log("✅ Spotify Web Playback SDK is ready.");
-    ensureToken();
-    if (!playerConnected) {
-        initializePlayer();
-    }
-};
-
-// ✅ Fetch playlist songs for autocomplete
-async function fetchPlaylistSongs() {
-    if (!token) return;
-    try {
-        const response = await fetch("songs_list.txt");
-        const text = await response.text();
-        songList = text.split("\n").map(song => song.trim()).filter(song => song.length > 0);
-
-        console.log("✅ Songs list loaded:", songList);
-    } catch (error) {
-        console.error("❌ Error loading songs list:", error);
-    }
-}
-
-// ✅ Update autocomplete suggestions (Only matching beginning letters)
-songInput.addEventListener("input", () => {
-    const inputText = songInput.value.trim().toLowerCase();
-    datalist.innerHTML = "";
-
-    if (inputText.length === 0) return;
-
-    const matchingSongs = songList.filter(song => song.toLowerCase().startsWith(inputText));
-
-    matchingSongs.forEach(song => {
-        let option = document.createElement("option");
-        option.value = song;
-        datalist.appendChild(option);
-    });
-});
-
-// ✅ Initialize Spotify Player
-function initializePlayer() {
-    if (!token || playerConnected) return;
-
-    player = new Spotify.Player({
-        name: "Postle Malone Game",
-        getOAuthToken: cb => { cb(token); },
-        volume: 0.5
-    });
-
-    player.addListener("ready", ({ device_id }) => {
-        if (!playerConnected) {
-            deviceId = device_id;
-            console.log("✅ Player is ready. Device ID:", deviceId);
-            playBtn.disabled = false;
-            transferPlayback();
-            playerConnected = true;
-        }
-    });
-
-    player.connect().then(success => {
-        if (success) {
-            console.log("✅ Spotify Player connected successfully.");
-        } else {
-            console.error("❌ ERROR: Failed to connect player.");
-        }
-    });
-}
-
-// ✅ Transfer Playback to Spotify App
-async function transferPlayback() {
-    if (!token || !deviceId) return;
-
-    try {
-        console.log(`🔄 Transferring playback to Spotify App (Device ID: ${deviceId})...`);
-
-        await fetch("https://api.spotify.com/v1/me/player/pause", {
-            method: "PUT",
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        await fetch("https://api.spotify.com/v1/me/player", {
-            method: "PUT",
-            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ device_ids: [deviceId], play: true }) // Ensuring play
-        });
-
-        console.log("✅ Playback transferred successfully.");
-    } catch (error) {
-        console.error("❌ Error transferring playback:", error);
-    }
-}
-
-// ✅ Play a random song from the playlist
-async function playRandomSong() {
-    if (!token || !deviceId) return;
-
-    try {
-        const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        if (!response.ok) throw new Error();
-
-        const data = await response.json();
-        const tracks = data.items;
-        const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-
-        const durationMs = randomTrack.track.duration_ms;
-        const randomStartMs = Math.floor(Math.random() * (durationMs - 15000)); // Ensures start position allows full 15s
-
-        currentSongTitle = randomTrack.track.name;
-
-        await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-            method: "PUT",
-            headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ uris: [`spotify:track:${randomTrack.track.id}`], position_ms: randomStartMs })
-        });
-
-        lightBar.style.transition = "none";
-        lightBar.style.width = "100%";
-        setTimeout(() => {
-            lightBar.style.transition = "width 15s linear";
-            lightBar.style.width = "0%";
-        }, 50);
-
-        clearTimeout(roundTimeout);
-        roundTimeout = setTimeout(stopSong, 15000);
-    } catch (error) {
-        console.error("❌ Error playing track:", error);
-    }
-}
-
-// ✅ Stop song and show correct answer
+// ✅ Stop the song and show correct answer
 function stopSong() {
-    fetch("https://api.spotify.com/v1/me/player/pause", {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-
+    audioPlayer.pause();
     answerText.textContent = `Correct Answer: ${currentSongTitle}`;
     correctAnswerDisplay.style.display = "block";
 
@@ -239,15 +85,37 @@ function checkAnswer() {
         currentScore++; // Only increment score if the guess is correct
         scoreDisplay.textContent = currentScore;
         stopSong();
-        setTimeout(playRandomSong, 3000);
+        setTimeout(playRandomSong, 3000); // Start the next round after a 3-second delay
     }
 
     // Clear the input box after every attempt (correct or incorrect)
     songInput.value = "";
 }
 
-songInput.addEventListener("keypress", (e) => { if (e.key === "Enter") checkAnswer(); });
+// ✅ Update autocomplete suggestions (Only matching beginning letters)
+songInput.addEventListener("input", () => {
+    const inputText = songInput.value.trim().toLowerCase();
+    datalist.innerHTML = "";
+
+    if (inputText.length === 0) return;
+
+    const matchingSongs = songList.filter(song => song.toLowerCase().startsWith(inputText));
+
+    matchingSongs.forEach(song => {
+        let option = document.createElement("option");
+        option.value = song;
+        datalist.appendChild(option);
+    });
+});
+
+// ✅ Listen for Enter key and Submit button
+songInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") checkAnswer();
+});
+
 submitBtn.addEventListener("click", checkAnswer); // ✅ Fixes submit button
 
 playBtn.addEventListener("click", playRandomSong);
-getAccessToken();
+
+// Load the song list once the page is loaded
+window.onload = loadSongList;
