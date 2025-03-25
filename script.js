@@ -35,12 +35,12 @@ function triggerConfetti() {
 loginBtn.addEventListener("click", () => {
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state&show_dialog=true`;
 
-    // Try to open Spotify app using deep link
+    // Try to open Spotify app using deep link (for mobile devices)
     const spotifyLink = `spotify://authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state`;
 
     window.location.href = spotifyLink; // Redirect to the Spotify app (if available)
     
-    // Fallback to web login if the app is not available
+    // Fallback to web login if the app is not available (on desktop browsers)
     setTimeout(() => {
         window.location.href = authUrl;
     }, 500); 
@@ -240,9 +240,10 @@ function checkAnswer() {
         scoreDisplay.textContent = currentScore;
         stopSong();
         setTimeout(playRandomSong, 3000);
-    } else {
-        songInput.value = ""; // Clear input on incorrect guess
     }
+
+    // Clear the input box after every attempt (correct or incorrect)
+    songInput.value = "";
 }
 
 songInput.addEventListener("keypress", (e) => { if (e.key === "Enter") checkAnswer(); });
