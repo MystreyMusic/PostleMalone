@@ -37,7 +37,7 @@ loginBtn.addEventListener("click", () => {
 
     // Try to open Spotify app using deep link
     const spotifyLink = `spotify://authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state`;
-    
+
     window.location.href = spotifyLink; // Redirect to the Spotify app (if available)
     
     // Fallback to web login if the app is not available
