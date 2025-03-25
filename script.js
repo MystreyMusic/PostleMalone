@@ -1,4 +1,4 @@
-const clientId = "7e4affc97a3c47b2ade0c57322b0a407";
+const clientId = "7e4affc97a3c47b2ade0c57322b0a407"; 
 const redirectUri = "https://mystreymusic.github.io/PostleMalone/";
 
 let token = localStorage.getItem("spotify_token");
@@ -34,7 +34,14 @@ function triggerConfetti() {
 // ✅ Redirect user to Spotify login
 loginBtn.addEventListener("click", () => {
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state&show_dialog=true`;
-    window.location.href = authUrl; // Redirects to the Spotify app if available
+
+    // Try to open Spotify app using deep link
+    const spotifyLink = `spotify://authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state`;
+    
+    window.location.href = spotifyLink; // Redirect to the Spotify app (if available) for login
+    setTimeout(() => {
+        window.location.href = authUrl; // Fallback to web login if the app is not available
+    }, 500); // Timeout to ensure the app is given priority
 });
 
 // ✅ Extract and store access token
@@ -139,12 +146,12 @@ function initializePlayer() {
     });
 }
 
-// ✅ Transfer Playback to Browser
+// ✅ Transfer Playback to Spotify App
 async function transferPlayback() {
     if (!token || !deviceId) return;
 
     try {
-        console.log(`🔄 Transferring playback to browser (Device ID: ${deviceId})...`);
+        console.log(`🔄 Transferring playback to Spotify App (Device ID: ${deviceId})...`);
 
         await fetch("https://api.spotify.com/v1/me/player/pause", {
             method: "PUT",
