@@ -4,6 +4,7 @@ const redirectUri = "https://mystreymusic.github.io/PostleMalone/";
 let token = localStorage.getItem("spotify_token");
 let tokenExpiration = localStorage.getItem("spotify_token_expiration");
 let highScore = localStorage.getItem("high_score") || 0;
+let currentScore = 0; // Track current score
 
 const loginBtn = document.getElementById("login-btn");
 const playBtn = document.getElementById("play-btn");
@@ -211,6 +212,20 @@ function stopSong() {
 
     answerText.textContent = `Correct Answer: ${currentSongTitle}`;
     correctAnswerDisplay.style.display = "block";
+
+    // Update the score
+    currentScore++;
+    scoreDisplay.textContent = currentScore;
+
+    // Trigger confetti
+    triggerConfetti();
+
+    // Update high score if needed
+    if (currentScore > highScore) {
+        highScore = currentScore;
+        localStorage.setItem("high_score", highScore);
+        highScoreDisplay.textContent = highScore;
+    }
 }
 
 // ✅ Submit Guess (Now works with button)
