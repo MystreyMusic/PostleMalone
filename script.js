@@ -85,6 +85,8 @@ function stopSong() {
         localStorage.setItem("high_score", highScore);
         highScoreDisplay.textContent = highScore;
     }
+
+    setTimeout(playRandomSong, 3000); // Move to the next round after 3 seconds
 }
 
 // ✅ Get a random song from the song list, ensuring no repeats
@@ -108,11 +110,11 @@ function checkAnswer() {
         currentScore++; // Only increment score if the guess is correct
         scoreDisplay.textContent = currentScore;
         stopSong();
-        setTimeout(playRandomSong, 3000); // Start the next round after a 3-second delay
+    } else {
+        songInput.value = ""; // Clear input if the guess is incorrect
+        songInput.style.backgroundColor = "red"; // Flash the input red
+        setTimeout(() => songInput.style.backgroundColor = "", 500); // Reset the input box color after 500ms
     }
-
-    // Clear the input box after every attempt (correct or incorrect)
-    songInput.value = "";
 }
 
 // ✅ Update autocomplete suggestions (Only matching beginning letters)
