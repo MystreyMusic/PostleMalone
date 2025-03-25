@@ -3,6 +3,7 @@ let highScore = localStorage.getItem("high_score") || 0;
 let currentSongTitle = "";
 let roundTimeout;
 let audioPlayer = new Audio();
+let playedSongs = []; // Store songs that have already been played to avoid repeats
 
 const musicFolder = "music"; // Folder where the MP3s are stored
 const playBtn = document.getElementById("play-btn");
@@ -22,37 +23,35 @@ function triggerConfetti() {
     confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
 }
 
-// ✅ Load the song list from the music folder
+// ✅ Load the song list from the music folder (dynamically)
 function loadSongList() {
-    // Fetch all the MP3 files in the music folder dynamically
-    fetch(musicFolder)
+    // Assuming your server allows fetching the file list
+    fetch("songs_data.txt")
         .then(response => response.text())
         .then(data => {
-            // Assuming your server lists the MP3 files in the folder
-            const songs = data.split("\n").filter(song => song.endsWith(".mp3"));
-            songList = songs.map(song => song.replace(".mp3", ""));
+            songList = data.split("\n").map(song => song.replace(".mp3", ""));
             console.log("✅ Song list loaded:", songList);
-
-            // Enable play button after loading songs
-            playBtn.disabled = false;
+            playBtn.disabled = false; // Enable play button after loading
         })
-        .catch(error => {
-            console.error("Error loading song list:", error);
-        });
+        .catch(error => console.error("Error loading song list:", error));
 }
 
-// ✅ Play a random song from the list
+// ✅ Play a random song from the list and random 15-second interval
 function playRandomSong() {
     if (songList.length === 0) return; // Ensure the song list is not empty
 
-    // Select a random song from the list
-    const randomIndex = Math.floor(Math.random() * songList.length);
-    const randomSong = songList[randomIndex];
+    let randomSong = getRandomSong(); // Get a random song that hasn't been played yet
+
+    if (!randomSong) return; // If there are no songs left, stop the game
 
     currentSongTitle = randomSong; // Set the current song title
 
+    // Select a random start time for the 15-second segment (to avoid memorization)
+    const randomStartTime = Math.floor(Math.random() * (audioPlayer.duration - 15));
+
     // Update the audio source and play it
     audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
+    audioPlayer.currentTime = randomStartTime; // Set the start time for the song
     audioPlayer.play();
 
     // Show the light bar (timing of the 15-second countdown)
@@ -77,12 +76,30 @@ function stopSong() {
     // Trigger confetti
     triggerConfetti();
 
+    // Mark the song as played
+    playedSongs.push(currentSongTitle);
+
     // Update high score if needed
     if (currentScore > highScore) {
         highScore = currentScore;
         localStorage.setItem("high_score", highScore);
         highScoreDisplay.textContent = highScore;
     }
+}
+
+// ✅ Get a random song from the song list, ensuring no repeats
+function getRandomSong() {
+    // Filter out songs that have already been played
+    const remainingSongs = songList.filter(song => !playedSongs.includes(song));
+
+    if (remainingSongs.length === 0) {
+        alert("All songs have been played! Resetting the game.");
+        playedSongs = []; // Reset played songs if all songs have been played
+        return getRandomSong(); // Recursively call to start again
+    }
+
+    const randomIndex = Math.floor(Math.random() * remainingSongs.length);
+    return remainingSongs[randomIndex];
 }
 
 // ✅ Submit Guess
