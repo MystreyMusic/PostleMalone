@@ -58,7 +58,7 @@ h1 {
     right: 0; /* Keep it anchored to the right */
     width: 0%; /* Start empty */
     height: 5px;
-    background: linear-gradient(to left, white, red);
+    background: linear-gradient(to left, white, black); /* Updated colors */
     transition: width 15s linear;
 }
 
@@ -98,6 +98,17 @@ button:disabled {
     text-align: center;
     display: block;
     margin: 0 auto;
+}
+
+/* Correct Answer Display */
+#correct-answer {
+    display: none;
+    background-color: #27ae60; /* Green background to highlight success */
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    color: white;
+    margin-top: 10px;
 }
 
 /* Confetti Canvas */
