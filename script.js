@@ -15,7 +15,7 @@ const highScoreDisplay = document.getElementById("high-score");
 const lightBar = document.getElementById("light-bar");
 const correctAnswerDisplay = document.getElementById("correct-answer");
 const answerText = document.getElementById("answer-text");
-const submitBtn = document.getElementById("submit-btn"); // ✅ Added submit button reference
+const submitBtn = document.getElementById("submit-btn");
 
 let player;
 let deviceId = null;
@@ -24,7 +24,7 @@ let songList = [];
 let playerConnected = false;
 let roundTimeout;
 
-const playlistId = "7LlnI4VRxopojzcvDLvGko"; // Post Malone playlist ✅
+const playlistId = "7LlnI4VRxopojzcvDLvGko"; // Post Malone playlist
 
 // 🎉 Confetti Effect
 function triggerConfetti() {
@@ -33,8 +33,8 @@ function triggerConfetti() {
 
 // ✅ Redirect user to Spotify login
 loginBtn.addEventListener("click", () => {
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state`;
-    window.location.href = authUrl;
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state&show_dialog=true`;
+    window.location.href = authUrl; // Redirects to the Spotify app if available
 });
 
 // ✅ Extract and store access token
@@ -213,10 +213,6 @@ function stopSong() {
     answerText.textContent = `Correct Answer: ${currentSongTitle}`;
     correctAnswerDisplay.style.display = "block";
 
-    // Update the score
-    currentScore++;
-    scoreDisplay.textContent = currentScore;
-
     // Trigger confetti
     triggerConfetti();
 
@@ -228,13 +224,16 @@ function stopSong() {
     }
 }
 
-// ✅ Submit Guess (Now works with button)
+// ✅ Submit Guess
 function checkAnswer() {
     if (songInput.value.trim().toLowerCase() === currentSongTitle.toLowerCase()) {
+        currentScore++; // Only increment score if the guess is correct
+        scoreDisplay.textContent = currentScore;
         stopSong();
         setTimeout(playRandomSong, 3000);
+    } else {
+        songInput.value = ""; // Clear input on incorrect guess
     }
-    songInput.value = "";
 }
 
 songInput.addEventListener("keypress", (e) => { if (e.key === "Enter") checkAnswer(); });
