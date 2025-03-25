@@ -38,10 +38,12 @@ loginBtn.addEventListener("click", () => {
     // Try to open Spotify app using deep link
     const spotifyLink = `spotify://authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=streaming%20user-read-private%20user-read-email%20user-modify-playback-state%20playlist-read-private%20user-read-playback-state`;
     
-    window.location.href = spotifyLink; // Redirect to the Spotify app (if available) for login
+    window.location.href = spotifyLink; // Redirect to the Spotify app (if available)
+    
+    // Fallback to web login if the app is not available
     setTimeout(() => {
-        window.location.href = authUrl; // Fallback to web login if the app is not available
-    }, 500); // Timeout to ensure the app is given priority
+        window.location.href = authUrl;
+    }, 500); 
 });
 
 // ✅ Extract and store access token
@@ -161,7 +163,7 @@ async function transferPlayback() {
         await fetch("https://api.spotify.com/v1/me/player", {
             method: "PUT",
             headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ device_ids: [deviceId], play: false }) 
+            body: JSON.stringify({ device_ids: [deviceId], play: true }) // Ensuring play
         });
 
         console.log("✅ Playback transferred successfully.");
