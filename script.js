@@ -33,8 +33,13 @@ function playRandomSong() {
     let randomSong = getRandomSong();
     if (!randomSong) return;
     currentSongTitle = randomSong;
-    audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
     
+    // Construct the song URL
+    let songUrl = `${musicFolder}/${randomSong}.mp3`;
+    console.log(`Attempting to load song: ${songUrl}`);
+    
+    audioPlayer.src = songUrl;
+
     // Ensure the audio is fully loaded and ready to play
     audioPlayer.load();
     
