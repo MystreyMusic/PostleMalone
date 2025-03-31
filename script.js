@@ -16,12 +16,18 @@ const submitBtn = document.getElementById("submit-btn");
 const lightBar = document.getElementById("light-bar");
 let songList = [];
 
-// 🎶 Fetch song list from a predefined file
+// 🎶 Fetch song list dynamically from the music folder
 async function fetchSongs() {
     try {
-        const response = await fetch("songs_list.txt");
+        const response = await fetch(musicFolder);
         const text = await response.text();
-        songList = text.split("\n").map(name => name.trim()).filter(name => name);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "text/html");
+        const links = doc.querySelectorAll("a");
+        songList = [...links]
+            .map(link => link.textContent)
+            .filter(name => name.endsWith(".mp3"))
+            .map(name => name.replace(".mp3", ""));
     } catch (error) {
         console.error("Error fetching songs:", error);
     }
@@ -41,7 +47,7 @@ function playRandomSong() {
     audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
     audioPlayer.load();
     
-    audioPlayer.onloadedmetadata = () => {
+    audioPlayer.oncanplaythrough = () => {
         const maxStartTime = Math.max(0, audioPlayer.duration - 15);
         const randomStartTime = Math.floor(Math.random() * maxStartTime);
         audioPlayer.currentTime = randomStartTime;
