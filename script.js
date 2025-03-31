@@ -14,24 +14,13 @@ const correctAnswerDisplay = document.getElementById("correct-answer");
 const answerText = document.getElementById("answer-text");
 const submitBtn = document.getElementById("submit-btn");
 const lightBar = document.getElementById("light-bar");
-let songList = [];
 
-// 🎶 Fetch song list dynamically from the music folder
-async function fetchSongs() {
-    try {
-        const response = await fetch(musicFolder);
-        const text = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, "text/html");
-        const links = doc.querySelectorAll("a");
-        songList = [...links]
-            .map(link => link.textContent)
-            .filter(name => name.endsWith(".mp3"))
-            .map(name => name.replace(".mp3", ""));
-    } catch (error) {
-        console.error("Error fetching songs:", error);
-    }
-}
+// 🎶 Manually Define the Song List (without .mp3 extension)
+let songList = [
+    "12 Congratulations (feat. Quavo)",
+    "07 I Fall Apart",
+    "06 White Iverson"
+];
 
 // 🎶 Confetti Effect
 function triggerConfetti() {
@@ -45,18 +34,26 @@ function playRandomSong() {
     if (!randomSong) return;
     currentSongTitle = randomSong;
     audioPlayer.src = `${musicFolder}/${randomSong}.mp3`;
+    
+    // Ensure the audio is fully loaded and ready to play
     audioPlayer.load();
     
     audioPlayer.oncanplaythrough = () => {
         const maxStartTime = Math.max(0, audioPlayer.duration - 15);
         const randomStartTime = Math.floor(Math.random() * maxStartTime);
         audioPlayer.currentTime = randomStartTime;
+        
+        // Corrected playback logic
         audioPlayer.play().then(() => {
             console.log("Playing song:", randomSong);
         }).catch(error => {
             console.error("Error playing the song:", error);
         });
         startTimer();
+    };
+
+    audioPlayer.onerror = (error) => {
+        console.error("Error loading audio:", error);
     };
 }
 
@@ -133,8 +130,7 @@ songInput.addEventListener("keypress", (e) => {
 submitBtn.addEventListener("click", checkAnswer);
 playBtn.addEventListener("click", playRandomSong);
 
-// ✅ Load song list when page loads
-window.onload = async () => {
-    await fetchSongs();
+// ✅ Load the game
+window.onload = () => {
     playBtn.disabled = false;
 };
