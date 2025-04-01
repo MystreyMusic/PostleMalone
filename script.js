@@ -26,11 +26,11 @@ function triggerConfetti(duration) {
     let end = Date.now() + duration;
     (function frame() {
         confetti({
-            particleCount: 50,  // Reduced particle count for a softer effect
-            spread: 40,         // Narrowed the spread for a more focused effect
+            particleCount: 25,  // Reduced particle count for a softer effect
+            spread: 60,         // Narrowed the spread for a more focused effect
             origin: { y: 0.6 }, // Keep the confetti origin centered
             scalar: 0.6,        // Smaller confetti
-            gravity: 0.3        // Slower fall speed
+            gravity: 0.5        // Slower fall speed
         });
         if (Date.now() < end) {
             requestAnimationFrame(frame);
