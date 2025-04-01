@@ -41,12 +41,10 @@ function playRandomSong() {
     let songUrl = `${musicFolder}/${randomSong}.mp3`;
     console.log(`Attempting to load song: ${songUrl}`);
     
-    // Reset the audio player before playing a new song
     audioPlayer.pause();
     audioPlayer.src = "";
     audioPlayer.load();
 
-    // Set up the song to play only once when it's ready
     audioPlayer.src = songUrl;
     audioPlayer.load();
 
@@ -84,6 +82,9 @@ function startTimer() {
 }
 
 function endRound() {
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+
     if (currentScore > highScore) {
         highScore = currentScore;
         localStorage.setItem("high_score", highScore);
