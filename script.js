@@ -39,7 +39,7 @@ function triggerConfetti(duration) {
 }
 
 function playRandomSong() {
-    correctAnswerDisplay.style.display = "none"; // Hide the correct answer when a new song starts
+    correctAnswerDisplay.style.display = "none"; // Hide correct answer at the start of a new round
 
     if (songList.length === 0) return;
     let randomSong = getRandomSong();
@@ -50,9 +50,6 @@ function playRandomSong() {
     console.log(`Attempting to load song: ${songUrl}`);
     
     audioPlayer.pause();
-    audioPlayer.src = "";
-    audioPlayer.load();
-
     audioPlayer.src = songUrl;
     audioPlayer.load();
 
@@ -64,8 +61,8 @@ function playRandomSong() {
         const maxStartTime = Math.max(0, audioPlayer.duration - 15);
         const randomStartTime = Math.floor(Math.random() * maxStartTime);
     
+        audioPlayer.currentTime = randomStartTime;
         audioPlayer.play().then(() => {
-            audioPlayer.currentTime = randomStartTime;
             console.log(`Playing song: ${randomSong} from ${randomStartTime}s`);
             startTimer();
         }).catch(error => {
@@ -132,11 +129,12 @@ function stopSong(correct = false) {
     pauseTimer(); 
     playedSongs.push(currentSongTitle); // Always mark the song as played
 
-    // Start the next song after 3 seconds whether the answer is correct or not
-    setTimeout(() => {
-        resetTimer();
-        playRandomSong();
-    }, 3000);
+    if (correct) {
+        // If correct, start the next song after a 3-second delay
+        setTimeout(() => {
+            playRandomSong();
+        }, 3000);
+    }
 }
 
 function getRandomSong() {
@@ -152,7 +150,8 @@ function checkAnswer() {
     if (songInput.value.trim().toLowerCase() === currentSongTitle.toLowerCase()) {
         currentScore++;
         scoreDisplay.textContent = currentScore;
-        stopSong(true);
+        triggerConfetti(1000); // Confetti when correct answer
+        stopSong(true); // Next song starts after 3 seconds
     } else {
         songInput.value = "";
         songInput.style.backgroundColor = "red";
