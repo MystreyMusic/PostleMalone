@@ -35,17 +35,12 @@ function playRandomSong() {
     if (!randomSong) return;
     currentSongTitle = randomSong;
     
-    // Construct the song URL
     let songUrl = `${musicFolder}/${randomSong}.mp3`;
     console.log(`Attempting to load song: ${songUrl}`);
     
     audioPlayer.src = songUrl;
     audioPlayer.load();
     
-    // Remove previous event listeners to prevent multiple triggers
-    audioPlayer.oncanplaythrough = null;
-    audioPlayer.onerror = null;
-
     audioPlayer.oncanplaythrough = () => {
         if (!audioPlayer.duration || audioPlayer.duration < 15) {
             console.error("Error: Song duration is too short or not available.");
@@ -93,7 +88,7 @@ function stopSong(correct = false) {
         highScore = currentScore;
         localStorage.setItem("high_score", highScore);
         highScoreDisplay.textContent = highScore;
-        triggerConfetti(); // Only trigger confetti on new high score
+        triggerConfetti();
     }
 
     setTimeout(() => {
@@ -107,7 +102,7 @@ function getRandomSong() {
     let remainingSongs = songList.filter(song => !playedSongs.includes(song));
     if (remainingSongs.length === 0) {
         playedSongs = [];
-        remainingSongs = [...songList]; // Repopulate the list before selecting
+        remainingSongs = [...songList];
     }
     return remainingSongs[Math.floor(Math.random() * remainingSongs.length)];
 }
@@ -117,7 +112,7 @@ function checkAnswer() {
     if (songInput.value.trim().toLowerCase() === currentSongTitle.toLowerCase()) {
         currentScore++;
         scoreDisplay.textContent = currentScore;
-        triggerConfetti(); // Only show confetti on correct answer
+        triggerConfetti();
         stopSong(true);
     } else {
         songInput.value = "";
@@ -126,17 +121,17 @@ function checkAnswer() {
     }
 }
 
-// ✅ Update autocomplete suggestions
+// ✅ Autocomplete suggestions
 songInput.addEventListener("input", () => {
     const inputText = songInput.value.trim().toLowerCase();
     datalist.innerHTML = "";
     if (inputText.length === 0) return;
-    songList.filter(song => song.toLowerCase().startsWith(inputText))
-        .forEach(song => {
-            let option = document.createElement("option");
-            option.value = song;
-            datalist.appendChild(option);
-        });
+    let suggestions = songList.filter(song => song.toLowerCase().startsWith(inputText));
+    suggestions.forEach(song => {
+        let option = document.createElement("option");
+        option.value = song;
+        datalist.appendChild(option);
+    });
 });
 
 // ✅ Listen for Enter key and Submit button
