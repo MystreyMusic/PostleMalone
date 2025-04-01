@@ -122,6 +122,8 @@ button:disabled {
     margin-top: 20px;
     width: 100%;
     text-align: center;
+    z-index: 2; /* Ensure it appears on top */
+    position: relative; /* Allow for correct positioning */
 }
 
 /* Confetti Canvas */
