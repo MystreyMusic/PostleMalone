@@ -17,24 +17,10 @@ const lightBar = document.getElementById("light-bar");
 
 // 🎶 Manually Define the Song List (without .mp3 extension)
 let songList = [
-    "Congratulations (feat. Quavo)",
-    "I Fall Apart",
-    "White Iverson",
-    "Big Lie",
-    "Broken Whiskey Glass",
-    "Cold",
-    "Deja Vu (feat. Justin Bieber)",
-    "Feel (feat. Kehlani)",
-    "Feeling Whitney",
-    "Go Flex",
-    "Hit This Hard",
-    "Leave",
-    "Money Made Me Do It (feat. 2 Chainz)",
-    "No Option",
-    "Patient",
-    "Too Young",
-    "Up There",
-    "Yours Truly, Austin Post",
+    "Congratulations (feat. Quavo)", "I Fall Apart", "White Iverson", "Big Lie",
+    "Broken Whiskey Glass", "Cold", "Deja Vu (feat. Justin Bieber)", "Feel (feat. Kehlani)",
+    "Feeling Whitney", "Go Flex", "Hit This Hard", "Leave", "Money Made Me Do It (feat. 2 Chainz)",
+    "No Option", "Patient", "Too Young", "Up There", "Yours Truly, Austin Post"
 ];
 
 // 🎶 Confetti Effect
@@ -54,22 +40,27 @@ function playRandomSong() {
     console.log(`Attempting to load song: ${songUrl}`);
     
     audioPlayer.src = songUrl;
-
-    // Ensure the audio is fully loaded and ready to play
     audioPlayer.load();
     
+    // Remove previous event listeners to prevent multiple triggers
+    audioPlayer.oncanplaythrough = null;
+    audioPlayer.onerror = null;
+
     audioPlayer.oncanplaythrough = () => {
+        if (!audioPlayer.duration || audioPlayer.duration < 15) {
+            console.error("Error: Song duration is too short or not available.");
+            return;
+        }
         const maxStartTime = Math.max(0, audioPlayer.duration - 15);
         const randomStartTime = Math.floor(Math.random() * maxStartTime);
         audioPlayer.currentTime = randomStartTime;
-        
-        // Corrected playback logic
+
         audioPlayer.play().then(() => {
             console.log("Playing song:", randomSong);
+            startTimer();
         }).catch(error => {
             console.error("Error playing the song:", error);
         });
-        startTimer();
     };
 
     audioPlayer.onerror = (error) => {
