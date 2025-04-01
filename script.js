@@ -25,7 +25,13 @@ let songList = [
 function triggerConfetti(duration) {
     let end = Date.now() + duration;
     (function frame() {
-        confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
+        confetti({
+            particleCount: 50,  // Reduced particle count for a softer effect
+            spread: 40,         // Narrowed the spread for a more focused effect
+            origin: { y: 0.6 }, // Keep the confetti origin centered
+            scalar: 0.6,        // Smaller confetti
+            gravity: 0.3        // Slower fall speed
+        });
         if (Date.now() < end) {
             requestAnimationFrame(frame);
         }
@@ -109,7 +115,7 @@ function endRound() {
         audioPlayer.oncanplaythrough = () => {
             audioPlayer.currentTime = 107;
             audioPlayer.play();
-            triggerConfetti(23000);
+            triggerConfetti(23000); // Trigger the softer confetti
             setTimeout(() => { audioPlayer.pause(); }, 23000);
         };
     }
