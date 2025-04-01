@@ -85,10 +85,16 @@ function endRound() {
     audioPlayer.pause();
     audioPlayer.currentTime = 0;
 
+    // Display the correct answer when the timer expires
+    answerText.textContent = `Correct Answer: ${currentSongTitle}`;
+    correctAnswerDisplay.style.display = "block";
+
     if (currentScore > highScore) {
         highScore = currentScore;
         localStorage.setItem("high_score", highScore);
         highScoreDisplay.textContent = highScore;
+        
+        // Play "Congratulations" and trigger confetti
         audioPlayer.src = `${musicFolder}/Congratulations (feat. Quavo).mp3`;
         audioPlayer.load();
         audioPlayer.oncanplaythrough = () => {
@@ -98,10 +104,10 @@ function endRound() {
             setTimeout(() => { audioPlayer.pause(); }, 23000);
         };
     }
+
+    // Reset the current score
     currentScore = 0;
     scoreDisplay.textContent = currentScore;
-    answerText.textContent = `Correct Answer: ${currentSongTitle}`;
-    correctAnswerDisplay.style.display = "block";
 }
 
 function stopSong(correct = false) {
