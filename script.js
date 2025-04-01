@@ -72,7 +72,16 @@ function startTimer() {
         lightBar.style.width = "0%";
     }, 50);
     clearTimeout(roundTimeout);
-    roundTimeout = setTimeout(stopSong, 15000);
+    roundTimeout = setTimeout(endRound, 15000);
+}
+
+// ✅ End the round if time expires
+function endRound() {
+    audioPlayer.pause();
+    currentScore = 0;
+    scoreDisplay.textContent = currentScore;
+    answerText.textContent = `Correct Answer: ${currentSongTitle}`;
+    correctAnswerDisplay.style.display = "block";
 }
 
 // ✅ Stop the song and show the correct answer
@@ -119,7 +128,14 @@ function checkAnswer() {
         songInput.style.backgroundColor = "red";
         setTimeout(() => songInput.style.backgroundColor = "", 500);
     }
+    songInput.value = "";
 }
+
+// ✅ Ensure high score displays correctly on load
+window.onload = () => {
+    highScoreDisplay.textContent = highScore;
+    playBtn.disabled = false;
+};
 
 // ✅ Autocomplete suggestions
 songInput.addEventListener("input", () => {
@@ -140,8 +156,3 @@ songInput.addEventListener("keypress", (e) => {
 });
 submitBtn.addEventListener("click", checkAnswer);
 playBtn.addEventListener("click", playRandomSong);
-
-// ✅ Load the game
-window.onload = () => {
-    playBtn.disabled = false;
-};
