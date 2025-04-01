@@ -53,10 +53,10 @@ function playRandomSong() {
         }
         const maxStartTime = Math.max(0, audioPlayer.duration - 15);
         const randomStartTime = Math.floor(Math.random() * maxStartTime);
-        audioPlayer.currentTime = randomStartTime;
-
+    
         audioPlayer.play().then(() => {
-            console.log("Playing song:", randomSong);
+            audioPlayer.currentTime = randomStartTime;
+            console.log(`Playing song: ${randomSong} from ${randomStartTime}s`);
             startTimer();
         }).catch(error => {
             console.error("Error playing the song:", error);
@@ -81,17 +81,21 @@ function startTimer() {
 }
 
 // ✅ Stop the song and show the correct answer
-function stopSong() {
+function stopSong(correct = false) {
     audioPlayer.pause();
-    answerText.textContent = `Correct Answer: ${currentSongTitle}`;
-    correctAnswerDisplay.style.display = "block";
-    triggerConfetti();
+    if (!correct) {
+        answerText.textContent = `Correct Answer: ${currentSongTitle}`;
+        correctAnswerDisplay.style.display = "block";
+    }
     playedSongs.push(currentSongTitle);
+
     if (currentScore > highScore) {
         highScore = currentScore;
         localStorage.setItem("high_score", highScore);
         highScoreDisplay.textContent = highScore;
+        triggerConfetti(); // Only trigger confetti on new high score
     }
+
     setTimeout(() => {
         audioPlayer.src = "";
         playRandomSong();
@@ -100,10 +104,10 @@ function stopSong() {
 
 // ✅ Get a random song ensuring no repeats
 function getRandomSong() {
-    const remainingSongs = songList.filter(song => !playedSongs.includes(song));
+    let remainingSongs = songList.filter(song => !playedSongs.includes(song));
     if (remainingSongs.length === 0) {
         playedSongs = [];
-        return getRandomSong();
+        remainingSongs = [...songList]; // Repopulate the list before selecting
     }
     return remainingSongs[Math.floor(Math.random() * remainingSongs.length)];
 }
@@ -113,7 +117,8 @@ function checkAnswer() {
     if (songInput.value.trim().toLowerCase() === currentSongTitle.toLowerCase()) {
         currentScore++;
         scoreDisplay.textContent = currentScore;
-        stopSong();
+        triggerConfetti(); // Only show confetti on correct answer
+        stopSong(true);
     } else {
         songInput.value = "";
         songInput.style.backgroundColor = "red";
