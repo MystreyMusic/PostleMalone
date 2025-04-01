@@ -26,11 +26,11 @@ function triggerConfetti(duration) {
     let end = Date.now() + duration;
     (function frame() {
         confetti({
-            particleCount: 10,  // Reduced particle count for a softer effect
-            spread: 60,         // Narrowed the spread for a more focused effect
-            origin: { y: 1.0 }, // Keep the confetti origin centered
-            scalar: 0.6,        // Smaller confetti
-            gravity: 0.7        // Slower fall speed
+            particleCount: 10,  
+            spread: 60,         
+            origin: { y: 1.0 }, 
+            scalar: 0.6,        
+            gravity: 0.7        
         });
         if (Date.now() < end) {
             requestAnimationFrame(frame);
@@ -39,6 +39,8 @@ function triggerConfetti(duration) {
 }
 
 function playRandomSong() {
+    correctAnswerDisplay.style.display = "none"; // Hide the correct answer when a new song starts
+
     if (songList.length === 0) return;
     let randomSong = getRandomSong();
     if (!randomSong) return;
@@ -115,7 +117,7 @@ function endRound() {
         audioPlayer.oncanplaythrough = () => {
             audioPlayer.currentTime = 107;
             audioPlayer.play();
-            triggerConfetti(23000); // Trigger the softer confetti
+            triggerConfetti(23000);
             setTimeout(() => { audioPlayer.pause(); }, 23000);
         };
     }
@@ -127,12 +129,11 @@ function endRound() {
 
 function stopSong(correct = false) {
     audioPlayer.pause();
-    pauseTimer(); // Pause the timer when a correct answer is given
+    pauseTimer(); 
     if (!correct) {
-        // Only show the answer when the player is wrong and the round ends
         playedSongs.push(currentSongTitle);
         setTimeout(() => {
-            resetTimer(); // Reset the timer before playing a new song
+            resetTimer();
             audioPlayer.src = "";
             playRandomSong();
         }, 3000);
