@@ -130,16 +130,13 @@ function endRound() {
 function stopSong(correct = false) {
     audioPlayer.pause();
     pauseTimer(); 
-    if (!correct) {
-        playedSongs.push(currentSongTitle);
-        setTimeout(() => {
-            resetTimer();
-            audioPlayer.src = "";
-            playRandomSong();
-        }, 3000);
-    } else {
-        playedSongs.push(currentSongTitle);
-    }
+    playedSongs.push(currentSongTitle); // Always mark the song as played
+
+    // Start the next song after 3 seconds whether the answer is correct or not
+    setTimeout(() => {
+        resetTimer();
+        playRandomSong();
+    }, 3000);
 }
 
 function getRandomSong() {
