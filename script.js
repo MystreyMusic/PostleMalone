@@ -41,9 +41,15 @@ function playRandomSong() {
     let songUrl = `${musicFolder}/${randomSong}.mp3`;
     console.log(`Attempting to load song: ${songUrl}`);
     
+    // Reset the audio player before playing a new song
+    audioPlayer.pause();
+    audioPlayer.src = "";
+    audioPlayer.load();
+
+    // Set up the song to play only once when it's ready
     audioPlayer.src = songUrl;
     audioPlayer.load();
-    
+
     audioPlayer.oncanplaythrough = () => {
         if (!audioPlayer.duration || audioPlayer.duration < 15) {
             console.error("Error: Song duration is too short or not available.");
