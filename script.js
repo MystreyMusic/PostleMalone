@@ -15,7 +15,6 @@ const answerText = document.getElementById("answer-text");
 const submitBtn = document.getElementById("submit-btn");
 const lightBar = document.getElementById("light-bar");
 
-// 🎶 Manually Define the Song List (without .mp3 extension)
 let songList = [
     "Congratulations (feat. Quavo)", "I Fall Apart", "White Iverson", "Big Lie",
     "Broken Whiskey Glass", "Cold", "Deja Vu (feat. Justin Bieber)", "Feel (feat. Kehlani)",
@@ -23,12 +22,16 @@ let songList = [
     "No Option", "Patient", "Too Young", "Up There", "Yours Truly, Austin Post"
 ];
 
-// 🎶 Confetti Effect
-function triggerConfetti() {
-    confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
+function triggerConfetti(duration) {
+    let end = Date.now() + duration;
+    (function frame() {
+        confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
+        if (Date.now() < end) {
+            requestAnimationFrame(frame);
+        }
+    })();
 }
 
-// ✅ Play a random song from the list
 function playRandomSong() {
     if (songList.length === 0) return;
     let randomSong = getRandomSong();
@@ -63,7 +66,6 @@ function playRandomSong() {
     };
 }
 
-// ✅ Start 15-second countdown
 function startTimer() {
     lightBar.style.transition = "none";
     lightBar.style.width = "100%";
@@ -75,16 +77,26 @@ function startTimer() {
     roundTimeout = setTimeout(endRound, 15000);
 }
 
-// ✅ End the round if time expires
 function endRound() {
-    audioPlayer.pause();
+    if (currentScore > highScore) {
+        highScore = currentScore;
+        localStorage.setItem("high_score", highScore);
+        highScoreDisplay.textContent = highScore;
+        audioPlayer.src = `${musicFolder}/Congratulations (feat. Quavo).mp3`;
+        audioPlayer.load();
+        audioPlayer.oncanplaythrough = () => {
+            audioPlayer.currentTime = 107;
+            audioPlayer.play();
+            triggerConfetti(23000);
+            setTimeout(() => { audioPlayer.pause(); }, 23000);
+        };
+    }
     currentScore = 0;
     scoreDisplay.textContent = currentScore;
     answerText.textContent = `Correct Answer: ${currentSongTitle}`;
     correctAnswerDisplay.style.display = "block";
 }
 
-// ✅ Stop the song and show the correct answer
 function stopSong(correct = false) {
     audioPlayer.pause();
     if (!correct) {
@@ -92,21 +104,12 @@ function stopSong(correct = false) {
         correctAnswerDisplay.style.display = "block";
     }
     playedSongs.push(currentSongTitle);
-
-    if (currentScore > highScore) {
-        highScore = currentScore;
-        localStorage.setItem("high_score", highScore);
-        highScoreDisplay.textContent = highScore;
-        triggerConfetti();
-    }
-
     setTimeout(() => {
         audioPlayer.src = "";
         playRandomSong();
     }, 3000);
 }
 
-// ✅ Get a random song ensuring no repeats
 function getRandomSong() {
     let remainingSongs = songList.filter(song => !playedSongs.includes(song));
     if (remainingSongs.length === 0) {
@@ -116,12 +119,10 @@ function getRandomSong() {
     return remainingSongs[Math.floor(Math.random() * remainingSongs.length)];
 }
 
-// ✅ Submit Guess
 function checkAnswer() {
     if (songInput.value.trim().toLowerCase() === currentSongTitle.toLowerCase()) {
         currentScore++;
         scoreDisplay.textContent = currentScore;
-        triggerConfetti();
         stopSong(true);
     } else {
         songInput.value = "";
@@ -131,13 +132,11 @@ function checkAnswer() {
     songInput.value = "";
 }
 
-// ✅ Ensure high score displays correctly on load
 window.onload = () => {
     highScoreDisplay.textContent = highScore;
     playBtn.disabled = false;
 };
 
-// ✅ Autocomplete suggestions
 songInput.addEventListener("input", () => {
     const inputText = songInput.value.trim().toLowerCase();
     datalist.innerHTML = "";
@@ -150,7 +149,6 @@ songInput.addEventListener("input", () => {
     });
 });
 
-// ✅ Listen for Enter key and Submit button
 songInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkAnswer();
 });
