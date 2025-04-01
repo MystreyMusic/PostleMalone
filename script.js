@@ -17,9 +17,24 @@ const lightBar = document.getElementById("light-bar");
 
 // 🎶 Manually Define the Song List (without .mp3 extension)
 let songList = [
-    "12 Congratulations (feat. Quavo)",
-    "07 I Fall Apart",
-    "06 White Iverson"
+    "Congratulations (feat. Quavo)",
+    "I Fall Apart",
+    "White Iverson",
+    "Big Lie",
+    "Broken Whiskey Glass",
+    "Cold",
+    "Deja Vu (feat. Justin Bieber)",
+    "Feel (feat. Kehlani)",
+    "Feeling Whitney",
+    "Go Flex",
+    "Hit This Hard",
+    "Leave",
+    "Money Made Me Do It (feat. 2 Chainz)",
+    "No Option",
+    "Patient",
+    "Too Young",
+    "Up There",
+    "Yours Truly, Austin Post",
 ];
 
 // 🎶 Confetti Effect
