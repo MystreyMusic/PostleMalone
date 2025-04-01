@@ -39,9 +39,6 @@ function triggerConfetti(duration) {
 }
 
 function playRandomSong() {
-    // Hide the correct answer display when starting a new song
-    correctAnswerDisplay.style.display = "none";
-
     if (songList.length === 0) return;
     let randomSong = getRandomSong();
     if (!randomSong) return;
