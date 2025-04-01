@@ -81,6 +81,15 @@ function startTimer() {
     roundTimeout = setTimeout(endRound, 15000);
 }
 
+function pauseTimer() {
+    clearTimeout(roundTimeout);
+    lightBar.style.transition = "none";
+}
+
+function resetTimer() {
+    startTimer();
+}
+
 function endRound() {
     audioPlayer.pause();
     audioPlayer.currentTime = 0;
@@ -112,12 +121,14 @@ function endRound() {
 
 function stopSong(correct = false) {
     audioPlayer.pause();
+    pauseTimer(); // Pause the timer when a correct answer is given
     if (!correct) {
         answerText.textContent = `Correct Answer: ${currentSongTitle}`;
         correctAnswerDisplay.style.display = "block";
     }
     playedSongs.push(currentSongTitle);
     setTimeout(() => {
+        resetTimer(); // Reset the timer before playing a new song
         audioPlayer.src = "";
         playRandomSong();
     }, 3000);
