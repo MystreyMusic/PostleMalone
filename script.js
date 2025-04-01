@@ -129,15 +129,16 @@ function stopSong(correct = false) {
     audioPlayer.pause();
     pauseTimer(); // Pause the timer when a correct answer is given
     if (!correct) {
-        answerText.textContent = `Correct Answer: ${currentSongTitle}`;
-        correctAnswerDisplay.style.display = "block";
+        // Only show the answer when the player is wrong and the round ends
+        playedSongs.push(currentSongTitle);
+        setTimeout(() => {
+            resetTimer(); // Reset the timer before playing a new song
+            audioPlayer.src = "";
+            playRandomSong();
+        }, 3000);
+    } else {
+        playedSongs.push(currentSongTitle);
     }
-    playedSongs.push(currentSongTitle);
-    setTimeout(() => {
-        resetTimer(); // Reset the timer before playing a new song
-        audioPlayer.src = "";
-        playRandomSong();
-    }, 3000);
 }
 
 function getRandomSong() {
